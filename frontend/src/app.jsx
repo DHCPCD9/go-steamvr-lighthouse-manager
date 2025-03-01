@@ -1,5 +1,5 @@
 import './app.css';
-import { GetFoundBaseStations, InitBluetooth } from "../wailsjs/go/main/App";
+import { ChangeBaseStationChannel, GetFoundBaseStations, InitBluetooth } from "../wailsjs/go/main/App";
 import { useEffect, useState } from "preact/hooks";
 import { LoaderIcon } from './components/Loader';
 import { BaseStation } from './components/BaseStation';
@@ -50,6 +50,41 @@ export function App(props) {
         return () => clearInterval(interval);
     }, [status]);
 
+    const setChannel = async (bs, channel) => {
+        if (channel < 1 || channel > 16) {
+            return {
+                ok: false,
+                message: "Channel range exceeded"
+            }
+        }
+
+        console.log(baseStations)
+        if (baseStations.find(c => c.Channel == channel)) {
+            return {
+                ok: false,
+                message: "This channel conflicts with another base station"
+            }
+        }
+
+        let c = await ChangeBaseStationChannel(bs, channel);
+
+        if (c.startsWith("error")) return alert(c);
+        
+        return {
+            ok: true,
+            message: c
+        };
+    }
+
+    const updateBaseStation = async (bs, update) => {
+        let i = baseStations.findIndex(c => c.Name == bs);
+        let bStations = baseStations;
+        bStations[i] = {...baseStations[i], ...update};
+
+        console.log(bStations)
+        setBaseStations(bStations);
+    }
+
 
 
     return (
@@ -69,7 +104,7 @@ export function App(props) {
             />
             <div className='flex flex-col gap-2'>
                 {baseStations.map((bs, i) =>
-                    <BaseStation key={i} station={bs} rescan={reScan} />
+                    <BaseStation key={i} station={bs} rescan={reScan} setChannel={setChannel} updateBaseStation={updateBaseStation}/>
                 )}
             </div>
 

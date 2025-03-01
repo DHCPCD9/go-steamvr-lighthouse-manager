@@ -122,3 +122,25 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 
 	return "ok"
 }
+
+func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) string {
+	bs := GetBaseStation(baseStationMac)
+
+	if bs == nil {
+		return "Unknown base station"
+	}
+
+	for _, v := range baseStationsConnected {
+		if v.Channel == channel {
+			return "error: This channel conflicts with another base station"
+		}
+	}
+
+	if channel < 1 || channel > 16 {
+		return "error: Channel exceeds limit"
+	}
+
+	bs.SetChannel(channel)
+
+	return "ok"
+}

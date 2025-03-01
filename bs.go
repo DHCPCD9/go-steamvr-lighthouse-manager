@@ -109,6 +109,20 @@ func (bs *BaseStation) GetChannel() int {
 	return int(data[0])
 }
 
+func (bs *BaseStation) SetChannel(channel int) {
+
+	if bs.modeCharacteristic == nil {
+		log.Println("ModeCharacteristic is nil")
+		return
+	}
+
+	_, err := bs.modeCharacteristic.Write([]byte{byte(channel)})
+	if err != nil {
+		log.Printf("Read error: %v", err)
+	}
+
+}
+
 func (bs *BaseStation) GetPowerState() int16 {
 
 	if bs.powerStateCharacteristic == nil {
