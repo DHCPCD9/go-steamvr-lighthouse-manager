@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"slices"
 	"strings"
 
@@ -143,4 +144,12 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 	bs.SetChannel(channel)
 
 	return "ok"
+}
+
+func (a *App) Shutdown() {
+	for _, bs := range baseStationsConnected {
+		bs.p.Disconnect()
+	}
+
+	os.Exit(0)
 }

@@ -17,3 +17,7 @@ export function GetFoundBaseStations() {
 export function InitBluetooth() {
   return window['go']['main']['App']['InitBluetooth']();
 }
+
+export function Shutdown() {
+  return window['go']['main']['App']['Shutdown']();
+}
