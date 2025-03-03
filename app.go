@@ -47,7 +47,7 @@ func (a *App) InitBluetooth() bool {
 		return false
 	}
 
-	adapter.Scan(ScanCallback)
+	go adapter.Scan(ScanCallback)
 
 	a.bluetoothInitFinished = true
 	return true
@@ -109,14 +109,10 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 	switch status {
 	case "standingby":
 		bs.SetPowerState(0x02)
-		bs.PowerState = BS_POWERSTATE_STAND_BY
 	case "sleep":
-		bs.SetPowerState(0x01)
 		bs.SetPowerState(0x00)
-		bs.PowerState = BS_POWERSTATE_SLEEP
 	case "awake":
 		bs.SetPowerState(0x01)
-		bs.PowerState = BS_POWERSTATE_AWAKE
 	default:
 		return "unknown status"
 	}
@@ -142,6 +138,19 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 	}
 
 	bs.SetChannel(channel)
+	bs.Channel = channel
+
+	return "ok"
+}
+
+func (a *App) IdentitifyBaseStation(baseStationMac string) string {
+	bs := GetBaseStation(baseStationMac)
+
+	if bs == nil {
+		return "Unknown base station"
+	}
+
+	bs.Identitfy()
 
 	return "ok"
 }

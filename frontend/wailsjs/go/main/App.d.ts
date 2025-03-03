@@ -8,6 +8,8 @@ export function ChangeBaseStationPowerStatus(arg1:string,arg2:string):Promise<st
 
 export function GetFoundBaseStations():Promise<Array<main.BaseStation>>;
 
+export function IdentitifyBaseStation(arg1:string):Promise<string>;
+
 export function InitBluetooth():Promise<boolean>;
 
 export function Shutdown():Promise<void>;

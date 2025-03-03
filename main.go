@@ -19,7 +19,7 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:  "Base Station Manager By Alumi",
 		Width:  700,
-		Height: 300,
+		Height: 325,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

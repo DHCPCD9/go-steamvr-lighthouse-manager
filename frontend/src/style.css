@@ -1,4 +1,5 @@
 
+
 .poppins-thin {
     font-family: "Poppins", sans-serif;
     font-weight: 100;
@@ -107,3 +108,7 @@
     font-style: italic;
   }
   
+
+body {
+    overflow: hidden;
+}

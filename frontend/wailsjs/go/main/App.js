@@ -14,6 +14,10 @@ export function GetFoundBaseStations() {
   return window['go']['main']['App']['GetFoundBaseStations']();
 }
 
+export function IdentitifyBaseStation(arg1) {
+  return window['go']['main']['App']['IdentitifyBaseStation'](arg1);
+}
+
 export function InitBluetooth() {
   return window['go']['main']['App']['InitBluetooth']();
 }
