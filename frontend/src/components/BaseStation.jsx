@@ -1,4 +1,4 @@
-import { ChevronRightIcon, EyeIcon } from "lucide-preact";
+import { ChevronRightIcon, CircleArrowLeftIcon, EyeIcon } from "lucide-preact";
 import { BaseStationIcon } from "../assets/basestation";
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -6,12 +6,13 @@ import VisibilityIcon from "../assets/icons/VisibilityIcon";
 import { useState } from "preact/hooks";
 import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wailsjs/go/main/App";
 import { PowerIcon } from "lucide-preact";
+import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
+import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 export function BaseStation({ station }) {
 
     const [powerState, setPowerState] = useState(station.PowerState);
     const isAwoke = [0x0B, 0x01, 0x09].includes(powerState);
 
-    console.log(powerState)
     const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);
     const [powerStateLocked, setPowerStateLocked] = useState(false);
     
@@ -44,13 +45,14 @@ export function BaseStation({ station }) {
 
     
 
-    console.log(isAwoke)
     return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center">
         <div className="flex flex-row gap-[16px] items-center">
             <BaseStationIcon  />
             <div className="flex flex-col gap-[2px] text-[14px]">
-                <span>
-                    {station.Name}
+                <span className="flex flex-row gap-[6px] items-center">
+                    <span>{station.Name} </span>
+                   <StatusCircleIcon class={`data-[awoken="false"]:fill-red-500 fill-green-500 duration-300`}  data-awoken={isAwoke} />
+
                 </span>
                 <span className="text-[#C6C6C6]">
                     Channel {station.Channel}
@@ -71,12 +73,12 @@ export function BaseStation({ station }) {
 
             <motion.div key={"awoke"}>
                 <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" disabled={powerStateLocked} onClick={updatePowerState}>
-                   <PowerIcon class={`data-[awoken="true"]:text-red-500 text-green-500 duration-300`} size={16}  data-awoken={isAwoke} />
+                   <PowerStatusIcon class={`fill-[#C6C6C6]`} />
                 </button>
             </motion.div>
-            <button key={"open"}>
+            {/* <button key={"open"}>
                 <ChevronRightIcon />
-            </button>
+            </button> */}
             
             </AnimatePresence>
         </div>

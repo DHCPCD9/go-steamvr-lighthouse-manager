@@ -18,7 +18,7 @@ export function BaseStationsList() {
                     return alert("Unable to init bluetooth.");
                 }
 
-                let interval = setInterval(async () => {
+                setInterval(async () => {
                     let baseStations = await GetFoundBaseStations();
 
                     setBaseStations(baseStations);
@@ -26,8 +26,6 @@ export function BaseStationsList() {
                 
                 
                 setTimeout(() => {
-                    console.log(interval)
-                    clearInterval(interval);
                     setSearching(false);
                 }, 10000);
 
@@ -53,7 +51,7 @@ export function BaseStationsList() {
                 </div>
             </motion.div> : null} */}
             {baseStations.map((station, index) => 
-                <motion.div initial={{opacity: 0, x: -30}} animate={{ opacity: 1, x: 0}} transition={{ delay: (index + 1) * 0.150 }}>
+                <motion.div key={index} initial={{opacity: 0, x: -30}} animate={{ opacity: 1, x: 0}} transition={{ delay: (index + 1) * 0.150 }}>
                     <BaseStation station={station} key={index + 1}/>
                 </motion.div>
             )}

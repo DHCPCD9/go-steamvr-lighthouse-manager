@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 
-	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/application"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
@@ -16,10 +16,10 @@ func main() {
 	app := NewApp()
 
 	// Create application with options
-	err := wails.Run(&options.App{
+	mainApp := application.NewWithOptions(&options.App{
 		Title:  "Base Station Manager By Alumi",
 		Width:  700,
-		Height: 325,
+		Height: 400,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -30,6 +30,8 @@ func main() {
 			app,
 		},
 	})
+
+	err := mainApp.Run()
 
 	if err != nil {
 		println("Error:", err.Error())

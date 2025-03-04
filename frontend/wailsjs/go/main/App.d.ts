@@ -12,4 +12,12 @@ export function IdentitifyBaseStation(arg1:string):Promise<string>;
 
 export function InitBluetooth():Promise<boolean>;
 
+export function IsSteamVRConnected():Promise<boolean>;
+
+export function IsSteamVRConnectivityAvailable():Promise<boolean>;
+
 export function Shutdown():Promise<void>;
+
+export function SleepAllBaseStations():Promise<void>;
+
+export function WakeUpAllBaseStations():Promise<void>;

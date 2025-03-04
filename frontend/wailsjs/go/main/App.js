@@ -22,6 +22,22 @@ export function InitBluetooth() {
   return window['go']['main']['App']['InitBluetooth']();
 }
 
+export function IsSteamVRConnected() {
+  return window['go']['main']['App']['IsSteamVRConnected']();
+}
+
+export function IsSteamVRConnectivityAvailable() {
+  return window['go']['main']['App']['IsSteamVRConnectivityAvailable']();
+}
+
 export function Shutdown() {
   return window['go']['main']['App']['Shutdown']();
+}
+
+export function SleepAllBaseStations() {
+  return window['go']['main']['App']['SleepAllBaseStations']();
+}
+
+export function WakeUpAllBaseStations() {
+  return window['go']['main']['App']['WakeUpAllBaseStations']();
 }
