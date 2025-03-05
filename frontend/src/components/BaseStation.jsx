@@ -1,21 +1,16 @@
-import { ChevronRightIcon, CircleArrowLeftIcon, EyeIcon } from "lucide-preact";
 import { BaseStationIcon } from "../assets/basestation";
 import { motion, AnimatePresence } from "framer-motion"
 
 import VisibilityIcon from "../assets/icons/VisibilityIcon";
 import { useState } from "preact/hooks";
 import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wailsjs/go/main/App";
-import { PowerIcon } from "lucide-preact";
 import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 export function BaseStation({ station }) {
 
-    const [powerState, setPowerState] = useState(station.PowerState);
-    const isAwoke = [0x0B, 0x01, 0x09].includes(powerState);
+    const isAwoke = [0x0B, 0x01, 0x09].includes(station.PowerState);
 
-    const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);
-    const [powerStateLocked, setPowerStateLocked] = useState(false);
-    
+    const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);    
     const identitify = async () => {
         
         let result = await IdentitifyBaseStation(station.Name);
@@ -72,7 +67,7 @@ export function BaseStation({ station }) {
             : null}
 
             <motion.div key={"awoke"}>
-                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" disabled={powerStateLocked} onClick={updatePowerState}>
+                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" onClick={updatePowerState}>
                    <PowerStatusIcon class={`fill-[#C6C6C6]`} />
                 </button>
             </motion.div>

@@ -148,9 +148,6 @@ func (bs *BaseStation) SetPowerState(state byte) {
 	}
 
 	bs.powerStateCharacteristic.Write([]byte{state})
-
-	bs.PowerState = int(bs.GetPowerState())
-
 }
 
 func (bs *BaseStation) Identitfy() {

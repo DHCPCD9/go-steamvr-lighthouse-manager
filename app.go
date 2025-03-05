@@ -16,7 +16,7 @@ import (
 
 var adapter = bluetooth.DefaultAdapter
 var knownDeviceNames []string = []string{}
-var baseStationsConnected []BaseStation = []BaseStation{}
+var baseStationsConnected map[string]*BaseStation = make(map[string]*BaseStation)
 
 // App struct
 type App struct {
@@ -37,7 +37,7 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-func (a *App) GetFoundBaseStations() []BaseStation {
+func (a *App) GetFoundBaseStations() map[string]*BaseStation {
 	return baseStationsConnected
 }
 
@@ -90,21 +90,12 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 	bs.Channel = int(bs.GetChannel())
 	bs.PowerState = int(bs.GetPowerState())
 
-	baseStationsConnected = append(baseStationsConnected, *bs)
+	baseStationsConnected[sr.LocalName()] = bs
 	defer conn.Disconnect()
 }
 
-func GetBaseStation(name string) *BaseStation {
-	for _, baseStation := range baseStationsConnected {
-		if baseStation.Name == name {
-			return &baseStation
-		}
-	}
-	return nil
-}
-
 func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string) string {
-	bs := GetBaseStation(baseStationMac)
+	bs := baseStationsConnected[baseStationMac]
 
 	if bs == nil {
 		return "Unknown base station"
@@ -113,10 +104,13 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 	switch status {
 	case "standingby":
 		bs.SetPowerState(0x02)
+		baseStationsConnected[bs.Name].PowerState = 0x02
 	case "sleep":
 		bs.SetPowerState(0x00)
+		baseStationsConnected[bs.Name].PowerState = 0x00
 	case "awake":
 		bs.SetPowerState(0x01)
+		baseStationsConnected[bs.Name].PowerState = 0x01
 	default:
 		return "unknown status"
 	}
@@ -125,7 +119,7 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 }
 
 func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) string {
-	bs := GetBaseStation(baseStationMac)
+	bs := baseStationsConnected[baseStationMac]
 
 	if bs == nil {
 		return "Unknown base station"
@@ -148,7 +142,7 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 }
 
 func (a *App) IdentitifyBaseStation(baseStationMac string) string {
-	bs := GetBaseStation(baseStationMac)
+	bs := baseStationsConnected[baseStationMac]
 
 	if bs == nil {
 		return "Unknown base station"
@@ -213,6 +207,7 @@ func (a *App) WakeUpAllBaseStations() {
 			continue
 		}
 		c.SetPowerState(0x01)
+		c.PowerState = 0x01
 	}
 }
 
@@ -221,6 +216,9 @@ func (a *App) SleepAllBaseStations() {
 		if c.PowerState != BS_POWERSTATE_AWAKE {
 			continue
 		}
+
+		c.SetPowerState(0x01)
 		c.SetPowerState(0x00)
+		c.PowerState = 0x00
 	}
 }

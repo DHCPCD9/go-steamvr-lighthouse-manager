@@ -4,9 +4,6 @@ import { TitleBar } from './components/TitleBar';
 import Router from 'preact-router'
 export function App(props) {
 
-
-  
-
     return (
        <div>
         <TitleBar />

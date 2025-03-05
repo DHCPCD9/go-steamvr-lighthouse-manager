@@ -21,7 +21,7 @@ export function BaseStationsList() {
                 setInterval(async () => {
                     let baseStations = await GetFoundBaseStations();
 
-                    setBaseStations(baseStations);
+                    setBaseStations(Object.values(baseStations));
                 }, 300);
                 
                 

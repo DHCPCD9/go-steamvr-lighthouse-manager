@@ -6,7 +6,7 @@ export function ChangeBaseStationChannel(arg1:string,arg2:number):Promise<string
 
 export function ChangeBaseStationPowerStatus(arg1:string,arg2:string):Promise<string>;
 
-export function GetFoundBaseStations():Promise<Array<main.BaseStation>>;
+export function GetFoundBaseStations():Promise<Record<string, main.BaseStation>>;
 
 export function IdentitifyBaseStation(arg1:string):Promise<string>;
 

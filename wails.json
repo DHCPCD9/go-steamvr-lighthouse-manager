@@ -9,5 +9,13 @@
   "author": {
     "name": "DHCPCD",
     "email": "dhcpcd9@gmail.com"
+  },
+  "nsisType": "multiple",
+  "info": {
+    "companyName": "Alumi Inc.",
+    "productVersion": "1.0.0",
+    "copyright": "2025",
+    "comments": "Base Station Manager",
+    "productName": "Base Station Manager"
   }
 }
