@@ -17,9 +17,10 @@ func main() {
 
 	// Create application with options
 	mainApp := application.NewWithOptions(&options.App{
-		Title:  "Base Station Manager By Alumi",
-		Width:  700,
-		Height: 400,
+		Title:         "Base Station Manager By Alumi",
+		Width:         700,
+		Height:        400,
+		DisableResize: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

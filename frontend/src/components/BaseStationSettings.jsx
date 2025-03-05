@@ -63,9 +63,9 @@ export function BaseStationSettings({ station }) {
                 </div>
             </div>
             <AnimatePresence>
-                {channelChangeActive && <motion.div key={"channels"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.150 }} className="flex flex-row items-center max-w-full py-[6px] gap-[3px]">
+                {channelChangeActive && <motion.div key={"channels"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.150 }} className="flex flex-row items-center max-w-full py-[6px] gap-[6px]">
                     {[...Array(16).keys()].map((v) => <div 
-                    className={`px-[16px] py-[8px] rounded-[5px] text-[12px] data-[active="true"]:bg-[#1D81FF] data-[occupied="true"]:bg-[#121212] data-[occupied="true"]:text-[#888888] data-[can-be-selected="true"]:hover:bg-[#434343] duration-200 data-[can-be-selected="true"]:cursor-pointer`} 
+                    className={`px-[12px] py-[8px] rounded-[5px] text-[12px] data-[active="true"]:bg-[#1D81FF] data-[occupied="true"]:bg-[#121212] data-[occupied="true"]:text-[#888888] data-[can-be-selected="true"]:hover:bg-[#434343] duration-200 data-[can-be-selected="true"]:cursor-pointer`} 
                     data-can-be-selected={!(station.Channel == v+1) && !otherBaseStations.find(c => c.Channel == v+1 && c.Name != station.Name)} 
                     data-active={station.Channel == v+1} 
                     data-occupied={!!otherBaseStations.find(c => c.Channel == v+1 && c.Name != station.Name)}
