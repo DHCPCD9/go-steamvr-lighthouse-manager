@@ -79,7 +79,7 @@ export function TitleBar() {
         </div>
         <div className="flex flex-row gap-1 items-center">
             <AnimatePresence>
-                {steamVRAvailable && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px]">
+                {steamVRAvailable && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
                     <span className="text-[##C6C6C6]">SteamVR</span>
                     <span className={`data-[active="true"]:text-[#7AFF73] text-[#FF7373] duration-200`} data-active={steamVRLaunched}>{steamVRLaunched ? "Active" : "Inactive"} </span>
                 </div></motion.div>}

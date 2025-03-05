@@ -6,7 +6,7 @@ import { useState } from "preact/hooks";
 import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wailsjs/go/main/App";
 import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
-export function BaseStation({ station }) {
+export function BaseStation({ station, setCurrentBaseStation }) {
 
     const isAwoke = [0x0B, 0x01, 0x09].includes(station.PowerState);
 
@@ -40,7 +40,7 @@ export function BaseStation({ station }) {
 
     
 
-    return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center">
+    return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer" onClick={() => setCurrentBaseStation(station.Name)}>
         <div className="flex flex-row gap-[16px] items-center">
             <BaseStationIcon  />
             <div className="flex flex-col gap-[2px] text-[14px]">
