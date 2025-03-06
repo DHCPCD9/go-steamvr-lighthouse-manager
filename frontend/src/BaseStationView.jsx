@@ -14,6 +14,7 @@ export function BaseStationsList() {
     const [activeBaseStation, setActiveBaseStation] = useState();
 
     useEffect(() => {
+        let interval;
         (async () => {
             if (searching) {
 
@@ -21,7 +22,7 @@ export function BaseStationsList() {
                     return alert("Unable to init bluetooth.");
                 }
 
-                setInterval(async () => {
+                interval = setInterval(async () => {
                     let baseStations = await GetFoundBaseStations();
                     
                     setBaseStations(Object.values(baseStations));
@@ -35,12 +36,13 @@ export function BaseStationsList() {
 
             }
         })()
+
+        return () => clearInterval(interval);
     }, [searching]);
 
 
     useEffect(() => {
         (async() => {
-            console.log(activeBaseStation)
             if (activeBaseStation) {
                 return await smoothResize(700, 188, 150);
             }

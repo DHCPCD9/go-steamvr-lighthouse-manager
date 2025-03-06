@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { TitleBarSettingsIcon } from "../assets/icons/TitleBarSettingsIcon";
 import { CloseIcon } from "../assets/icons/CloseIcon";
+import { route } from "preact-router";
 
 
 
@@ -89,9 +90,9 @@ export function TitleBar() {
             <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" onClick={toggleAllBaseStations}>
                 <PowerStatusIcon width={14} height={14} class={`fill-[#C6C6C6]`} />
             </button>
-            <div>
+            <button onClick={(c) => route("/settings", true)}>
                 <TitleBarSettingsIcon width={16} height={16} fill="#888888" className={`hover:fill-[#1D81FF] duration-200`} />
-            </div>
+            </button>
             <button onClick={() => Shutdown()}>
                 <CloseIcon  width={12} height={12} fill="#888888" className={`hover:fill-[#1D81FF] duration-200`} />
             </button>
