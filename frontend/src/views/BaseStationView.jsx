@@ -1,10 +1,10 @@
-import { BaseStation } from "./components/BaseStation";
+import { BaseStation } from "../components/BaseStation";
 import { useEffect, useState } from 'preact/hooks'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader, Loader2Icon } from "lucide-preact";
-import { GetFoundBaseStations, InitBluetooth } from "../wailsjs/go/main/App";
-import { smoothResize } from "./utils/windows";
-import { BaseStationSettings } from "./components/BaseStationSettings";
+import { GetFoundBaseStations, InitBluetooth } from "../../wailsjs/go/main/App";
+import { smoothResize } from "../utils/windows";
+import { ContainerTitleBar } from "../components/ContainerTitleBar";
 export function BaseStationsList() {
 
     const [searching, setSearching] = useState(true);
@@ -15,63 +15,45 @@ export function BaseStationsList() {
 
     useEffect(() => {
         let interval;
+
+        (async () => {
+
+            if (!await InitBluetooth()) {
+                return alert("Unable to init bluetooth.");
+            }
+
+            interval = setInterval(async () => {
+                let baseStations = await GetFoundBaseStations();
+                
+                setBaseStations(Object.values(baseStations));
+            }, 300);
+        })()
+        
+        return () => clearInterval(interval);
+    }, [searching])
+    useEffect(() => {
         (async () => {
             if (searching) {
-
-                if (!await InitBluetooth()) {
-                    return alert("Unable to init bluetooth.");
-                }
-
-                interval = setInterval(async () => {
-                    let baseStations = await GetFoundBaseStations();
-                    
-                    setBaseStations(Object.values(baseStations));
-                }, 300);
-
-
                 setTimeout(() => {
                     setSearching(false);
                 }, 10000);
-
-
             }
         })()
 
-        return () => clearInterval(interval);
     }, [searching]);
 
 
     useEffect(() => {
-        (async() => {
-            if (activeBaseStation) {
-                return await smoothResize(700, 188, 150);
-            }
-
+        (async () => {
             await smoothResize(700, 400, 150);
         })()
-
-    }, [activeBaseStation]);
+    }, []);
 
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white py-[12px] px-[24px] text-[24px] poppins-medium flex flex-row gap-[12px] items-center">
-     
-            <AnimatePresence className={"flex flex-row items-center"}>
-            <span className={`text-white data-[has-basestation="true"]:text-[#C6C6C6] data-[has-basestation="true"]:hover:cursor-pointer duration-200`} data-has-basestation={!!activeBaseStation} onClick={() => activeBaseStation && setActiveBaseStation(null)}>
-                Devices
-            </span>
-                {activeBaseStation && <motion.div key={"arrow"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[#C6C6C6]">
-                    &gt;
-                </motion.div>}
-
-                {activeBaseStation && <motion.div key={"name"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    {activeBaseStation}
-                </motion.div>}
-            </AnimatePresence>
+            <ContainerTitleBar items={["Devices", activeBaseStation ? activeBaseStation : null]}/>
         </div>
         <div>
-            {/* <BaseStation station={{ Name: "LHB-123456", Channel: 5, PowerState: 2, OldFirmware: false}}/>
-        <BaseStation station={{ Name: "LHB-123456", Channel: 5, PowerState: 2, OldFirmware: false}}/>
-         */}
                   {activeBaseStation && <AnimatePresence key={"base station"}>
                     <motion.div key={"settings"} initial={{ x: -20, opacity: 0}} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}>
 

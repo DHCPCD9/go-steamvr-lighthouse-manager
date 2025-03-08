@@ -11,12 +11,18 @@ import (
 	"strings"
 	"syscall"
 
+	_ "embed"
+
 	"tinygo.org/x/bluetooth"
 )
 
 var adapter = bluetooth.DefaultAdapter
 var knownDeviceNames []string = []string{}
 var baseStationsConnected map[string]*BaseStation = make(map[string]*BaseStation)
+var config Configuration = GetConfiguration()
+
+//go:embed VERSION
+var version string
 
 // App struct
 type App struct {
@@ -39,6 +45,26 @@ func (a *App) startup(ctx context.Context) {
 
 func (a *App) GetFoundBaseStations() map[string]*BaseStation {
 	return baseStationsConnected
+}
+
+func (a *App) GetConfiguration() Configuration {
+	return config
+}
+
+func (a *App) GetVersion() string {
+	return version
+}
+
+func (a *App) ForceUpdate() {
+	ForceUpdate()
+}
+
+func (a *App) ToggleSteamVRManagement() Configuration {
+	config.IsSteamVRManaged = !config.IsSteamVRManaged
+
+	config.Save()
+
+	return config
 }
 
 func (a *App) InitBluetooth() bool {
@@ -92,6 +118,20 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 
 	baseStationsConnected[sr.LocalName()] = bs
 	defer conn.Disconnect()
+
+	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
+
+		running, err := isProcRunning("vrserver")
+
+		if err != nil {
+			//whoops
+			return
+		}
+		//Powering on base station
+		if running {
+			bs.SetPowerState(0x01)
+		}
+	}
 }
 
 func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string) string {

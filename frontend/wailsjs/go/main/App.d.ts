@@ -6,7 +6,13 @@ export function ChangeBaseStationChannel(arg1:string,arg2:number):Promise<string
 
 export function ChangeBaseStationPowerStatus(arg1:string,arg2:string):Promise<string>;
 
+export function ForceUpdate():Promise<void>;
+
+export function GetConfiguration():Promise<main.Configuration>;
+
 export function GetFoundBaseStations():Promise<Record<string, main.BaseStation>>;
+
+export function GetVersion():Promise<string>;
 
 export function IdentitifyBaseStation(arg1:string):Promise<string>;
 
@@ -19,5 +25,7 @@ export function IsSteamVRConnectivityAvailable():Promise<boolean>;
 export function Shutdown():Promise<void>;
 
 export function SleepAllBaseStations():Promise<void>;
+
+export function ToggleSteamVRManagement():Promise<main.Configuration>;
 
 export function WakeUpAllBaseStations():Promise<void>;

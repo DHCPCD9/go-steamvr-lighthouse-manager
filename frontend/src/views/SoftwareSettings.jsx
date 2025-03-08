@@ -1,33 +1,57 @@
 import { useEffect, useState } from 'preact/hooks'
-import { route } from 'preact-router'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Checkbox } from './Checkbox'
+import { Checkbox } from '../components/Checkbox'
+import { ContainerTitleBar } from '../components/ContainerTitleBar';
+import { ForceUpdate, GetConfiguration, GetVersion, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
 
 export function SoftwareSettings() {
 
-    const [maangePower, setManagePower] = useState(false);
+    const [managePower, setManagePower] = useState(false);
+    const [config, setConfig] = useState();
+    const [version, setVersion] = useState();
+    const [updateLocked, setUpdateLocked] = useState();
+    const [updateText, sestUpdateText] = useState("Check"); // I think there is better way to do it, but it works anyways
+
     useEffect(() => {
         (async () => {
             await window.runtime.WindowSetSize(700, 278);
+
+            let config = await GetConfiguration();
+            setConfig(config);
+            setManagePower(config.is_steamvr_managed);
+            setVersion(await GetVersion());
         })()
-    }, [])
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            if (!config) return;
+            if (managePower == config.is_steamvr_managed) return;
+            let newConfig = await ToggleSteamVRManagement();
+            setConfig(newConfig);
+            setManagePower(newConfig.is_steamvr_managed);
+        })()
+    }, [managePower, config]);
+
+    const checkForUpdates = async () => {
+        setUpdateLocked(true);
+        let onlineVersion = await fetch("https://raw.githubusercontent.com/DHCPCD9/go-steamvr-lighthouse-manager/refs/heads/main/VERSION").then(r => r.text()).then(v => v.trim());
+
+        if (version != onlineVersion + "1") {
+            await ForceUpdate();
+            
+            return;
+        }
+
+        sestUpdateText("You are on the latest version!");
+        setUpdateLocked(false);
+
+        setTimeout(() => {
+            sestUpdateText("Check");
+        }, 1500);
+    } 
+    
     return (<div className="poppins-semibold text-white py-[12px] px-[24px] select-none">
-        <div className="flex flex-row gap-[12px] text-[24px]">
-            <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} ><button className='text-[#C6C6C6] cursor-pointer' onClick={() => route("/")}>
-                SteamVR LM
-            </button>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                <span className='text-[#C6C6C6]'>
-                    >
-                </span>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-            <span className='text-white'>
-                Settings
-            </span>
-            </motion.div>
-        </div>
+        <ContainerTitleBar items={["SteamVR LM", "Settings"]}/>
 
         <div className='flex flex-col gap-[8px] w-full pt-[8px]'>
             <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] p-[16px] rounded-[6px]'>
@@ -42,7 +66,7 @@ export function SoftwareSettings() {
                     </div>
                 </div>
                 <div>
-                    <Checkbox value={maangePower} SetValue={setManagePower}/>
+                    <Checkbox value={managePower} SetValue={setManagePower}/>
                 </div>
             </div>
 
@@ -58,8 +82,8 @@ export function SoftwareSettings() {
                     </div>
                 </div>
                 <div>
-                    <button className='py-[8px] px-[32px] bg-[#1D81FF] rounded-[6px] duration-100 hover:bg-[#66AAFF] cursor-pointer'>
-                        Check
+                    <button disabled={updateLocked} className='py-[8px] px-[32px] disabled:bg-[#2A63AB] disabled:hover:bg-[#2A63AB] disabled:cursor-not-allowed cursor-pointer bg-[#1D81FF] rounded-[6px] duration-100 hover:bg-[#66AAFF] cursor-pointer' onClick={checkForUpdates}>
+                        {updateText}
                     </button>
                 </div>
             </div>
@@ -76,7 +100,7 @@ export function SoftwareSettings() {
                 </div>
 
             <span className='poppins-regular text-[12px] text-[#C6C6C6]'>
-                v0
+                v{version}
             </span>
         </div>
         

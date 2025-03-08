@@ -10,8 +10,20 @@ export function ChangeBaseStationPowerStatus(arg1, arg2) {
   return window['go']['main']['App']['ChangeBaseStationPowerStatus'](arg1, arg2);
 }
 
+export function ForceUpdate() {
+  return window['go']['main']['App']['ForceUpdate']();
+}
+
+export function GetConfiguration() {
+  return window['go']['main']['App']['GetConfiguration']();
+}
+
 export function GetFoundBaseStations() {
   return window['go']['main']['App']['GetFoundBaseStations']();
+}
+
+export function GetVersion() {
+  return window['go']['main']['App']['GetVersion']();
 }
 
 export function IdentitifyBaseStation(arg1) {
@@ -36,6 +48,10 @@ export function Shutdown() {
 
 export function SleepAllBaseStations() {
   return window['go']['main']['App']['SleepAllBaseStations']();
+}
+
+export function ToggleSteamVRManagement() {
+  return window['go']['main']['App']['ToggleSteamVRManagement']();
 }
 
 export function WakeUpAllBaseStations() {

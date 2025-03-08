@@ -1,0 +1,16 @@
+{
+	"source" : "builtin",
+	"applications": [{
+		"app_key": "com.github.dhcpcd9.base-station-manager",
+		"launch_type": "binary",
+		"binary_path_windows": "%EXECUTABLE%",
+		"is_dashboard_overlay": true,
+
+		"strings": {
+			"en_us": {
+				"name": "Base Station Manager",
+				"description": "Base Station Power & Channel Managemer"
+			}
+		}
+	}]
+}
