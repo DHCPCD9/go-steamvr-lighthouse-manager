@@ -1,85 +1,82 @@
-import { ArrowUp, BedIcon, BedSingleIcon, PencilIcon } from "lucide-preact"
-import BaseStationIcon from "../assets/images/basestation.png"
-import { ChangeBaseStationPowerStatus } from "../../wailsjs/go/main/App"
-import { toast } from "react-toastify"
-import { useState } from "preact/hooks"
+import { BaseStationIcon } from "../assets/basestation";
+import { motion, AnimatePresence } from "framer-motion"
 
+import VisibilityIcon from "../assets/icons/VisibilityIcon";
+import { useState } from "preact/hooks";
+import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wailsjs/go/main/App";
+import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
+import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
+import { route } from "preact-router";
+export function BaseStation({ station, setCurrentBaseStation }) {
 
-export function BaseStation({ station, rescan, setChannel, updateBaseStation }) {
+    const isAwoke = [0x0B, 0x01, 0x09].includes(station.PowerState);
 
-    const [powerState, setPowerState] = useState(station.PowerState);
-    const [channel, setBaseStationChannel] = useState(station.Channel);
+    const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);    
+    const identitify = async () => {
+        
+        let result = await IdentitifyBaseStation(station.Name);
 
-    console.log(JSON.stringify(station))
-    return (<div className="min-h-8 w-full bg-[#1F1F1F] flex flex-row items-center px-2 py-1.5 border-[2px] border-[#323232] rounded-lg justify-between">
-        <div className="flex flex-row">
-            <img width={48} height={48} src={BaseStationIcon} /> 
-            <div className="flex flex-col gap-0.5">
-                <div>{station.Name}</div>
-                <div className="text-[14px] flex flex-row gap-2">
-                    <div>
-                        Channel {channel}
-                    </div>
-                    <div>
-                        Running status {powerState}
-                    </div>
-                </div>
+        if (result != "ok") return alert(result);
+
+        console.log("Identitfy packet sent");
+        setIdentitfyhDisabled(true);
+        setTimeout(() => {
+            setIdentitfyhDisabled(false);
+        }, 20000)
+    }
+
+    const updatePowerState = async () => {
+        if (isAwoke) {
+            //Sleeping of
+            let result = await ChangeBaseStationPowerStatus(station.Name, "sleep");
+            if (result != "ok") return alert(result);
+
+            return setPowerState(0x00);
+        }
+
+        //Waking it up
+        await ChangeBaseStationPowerStatus(station.Name, "awake");
+        setPowerState(0x0B);
+    }
+
+    
+
+    return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer">
+        <div className="flex flex-row gap-[16px] items-center" onClick={() => route(`/devices/${station.Name}`)}>
+            <BaseStationIcon  />
+            <div className="flex flex-col gap-[2px] text-[14px]">
+                <span className="flex flex-row gap-[6px] items-center">
+                    <span>{station.Name} </span>
+                   <StatusCircleIcon class={`data-[awoken="false"]:fill-red-500 fill-green-500 duration-300`}  data-awoken={isAwoke} />
+
+                </span>
+                <span className="text-[#C6C6C6]">
+                    Channel {station.Channel}
+                </span>
             </div>
         </div>
-        <div className="flex flex-row gap-2">
-        {powerState != 0 && <button className="p-1.5 bg-[#967EFF] rounded-full hover:bg-[#B5A5FF] duration-200" title="Standing By" onClick={async () => {
-                let status = ChangeBaseStationPowerStatus(station.Name, "standingby");
 
-                if (status != "ok") {
-                    return toast.error(status);
-                }
-                setPowerState(1);
-                return toast.success("Base station state was updated to standing by.")
-            }}>
-                <BedSingleIcon size={18}/>
-            </button>}
-            {powerState == 0 ? <button className="p-1.5 bg-[#1DA91A] rounded-full hover:bg-[#B5A5FF] duration-200" title="Awake base station" onClick={async () => {
-                let status = await ChangeBaseStationPowerStatus(station.Name, "awake");
+        <div className="flex flex-row gap-[8px] [&>*]:flex [&>*]:items-center">
+            <AnimatePresence>
 
-
-                if (status != "ok") {
-                    return toast.error(status);
-                }
-
-                setPowerState(1);
-                return toast.success("Base station has been awoken.")
-            }}> <ArrowUp size={18} /> </button>: <button className="p-1.5 bg-[#443196] rounded-full hover:bg-[#B5A5FF] duration-200" title="Sleep mode" onClick={async () => {
-                let status = await ChangeBaseStationPowerStatus(station.Name, "sleep");
-
-
-                if (status != "ok") {
-                    return toast.error(status);
-                }
-                setPowerState(0);
-                return toast.success("Base station has been put in sleep mode.");
-            }}>
-                <BedIcon size={18}/>
-            </button> }
-            <button className="p-1.5 bg-[#443196] rounded-full hover:bg-[#B5A5FF] duration-200" title="Edit Channel" onClick={async () => {
-                let r = prompt("Enter channel between 1 and 16");
-
-                let parsed = parseInt(r);
-
-                if (isNaN(parsed)) return alert("It doesn't seem to be channel");
-
-                let result = await setChannel(station.Name, parsed);
-
-                console.log(result)
-                if (!result.ok) {
-                    return alert(result.message);
-                }
-
-                setBaseStationChannel(parsed);
-                updateBaseStation(station.Name, { Channel: channel, PowerState: powerState})
-            }}>
-                <PencilIcon size={18}/>
-            </button>
             
+            {isAwoke ? <motion.div key={"identitfy"} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25"} onClick={identitify} disabled={identitfyDisabled}>
+                    <VisibilityIcon />
+                </button>
+            </motion.div>
+            : null}
+
+            <motion.div key={"awoke"}>
+                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" onClick={updatePowerState}>
+                   <PowerStatusIcon class={`fill-[#C6C6C6]`} />
+                </button>
+            </motion.div>
+            {/* <button key={"open"}>
+                <ChevronRightIcon />
+            </button> */}
+            
+            </AnimatePresence>
         </div>
     </div>)
 }

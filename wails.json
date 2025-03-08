@@ -2,12 +2,20 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "bs-manager-web",
   "outputfilename": "bs-manager-web",
-  "frontend:install": "npm install",
-  "frontend:build": "npm run build",
-  "frontend:dev:watcher": "npm run dev",
+  "frontend:install": "yarn",
+  "frontend:build": "yarn run build",
+  "frontend:dev:watcher": "yarn run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "DHCPCD",
     "email": "dhcpcd9@gmail.com"
+  },
+  "nsisType": "multiple",
+  "info": {
+    "companyName": "Alumi Inc.",
+    "productVersion": "1.0.0",
+    "copyright": "2025",
+    "comments": "Base Station Manager",
+    "productName": "Base Station Manager"
   }
 }
