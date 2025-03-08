@@ -36,7 +36,7 @@ export function SoftwareSettings() {
         setUpdateLocked(true);
         let onlineVersion = await fetch("https://raw.githubusercontent.com/DHCPCD9/go-steamvr-lighthouse-manager/refs/heads/main/VERSION").then(r => r.text()).then(v => v.trim());
 
-        if (version != onlineVersion + "1") {
+        if (version != onlineVersion) {
             await ForceUpdate();
             
             return;
