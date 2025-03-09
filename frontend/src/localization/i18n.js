@@ -2,6 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import English from './locales/en.json'
 import Russian from './locales/ru.json'
+import SimplifiedChinese from './locales/zh_cn.json'
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 // the translations
@@ -13,6 +14,9 @@ const resources = {
     },
     ru: {
         translation: Russian
+    },
+    zh_cn: {
+        translation: SimplifiedChinese
     }
 };
 

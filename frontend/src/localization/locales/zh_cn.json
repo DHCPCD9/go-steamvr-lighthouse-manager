@@ -1,0 +1,21 @@
+{
+    "Devices": "设备列表",
+    "No base stations seem to be found, maybe other programs are connected to them?": "没有发现基站，请检查是否有其他设备连接到了它们。",
+    "Channel": "信道",
+    "Base station channel to operate": "基站目标信道",
+    "You are on the latest version!": "已经是最新版本了！",
+    "Check": "检查",
+    "Manage Base Station Power": "管理基站电源状态",
+    "Manage Power based on SteamVR launched or not": "是否跟随SteamVR启动",
+    "Check for updates": "检查更新",
+    "Check for a new version": "检查是否有新版本",
+    "Made By": "由 <1>Alumi</1> 制作",
+    "Design By": "由 <1>Klonerovsky</1> 设计",
+    "Settings": "设置",
+    "Language": "语言",
+    "Language of the interface": "界面语言",
+    "Active": "激活",
+    "Inactive": "未激活",
+    "Source code": "源码"
+
+}

@@ -18,6 +18,7 @@ var vrappconfig string
 
 type Configuration struct {
 	IsSteamVRManaged bool `json:"is_steamvr_managed"`
+	IsSteamVRInstalled bool `json:"is_steamvr_installed"`
 }
 
 type AppConfig struct {
@@ -38,7 +39,7 @@ func GetConfiguration() Configuration {
 	}
 
 	if _, err := os.Stat(path.Join(appdataFolder, "Alumi", "Base Station Manager")); os.IsNotExist((err)) {
-		os.MkdirAll(path.Join(appdataFolder, "Alumi", "Base Station Manager"), os.ModeDir)
+		os.MkdirAll(path.Join(appdataFolder, "Alumi", "Base Station Manager"), 0700)
 	}
 
 	if _, err := os.Stat(path.Join(appdataFolder, "Alumi", "Base Station Manager", "config.json")); os.IsNotExist(err) {
@@ -72,11 +73,13 @@ func (c *Configuration) Load() {
 	}
 
 	c.IsSteamVRManaged = config.IsSteamVRManaged
-
-	if c.IsSteamVRManaged {
-		AddToStartup()
-	} else {
-		RemoveFromStartup()
+	c.IsSteamVRInstalled = GetSteamVRInstalled()
+	if c.IsSteamVRInstalled {
+		if c.IsSteamVRManaged {
+			AddToStartup()
+		} else {
+			RemoveFromStartup()
+		}
 	}
 }
 
@@ -87,13 +90,18 @@ func (c *Configuration) Save() {
 		panic("Failed to save config: " + err.Error())
 	}
 
-	if c.IsSteamVRManaged {
-		AddToStartup()
+	c.IsSteamVRInstalled = GetSteamVRInstalled()
+	if c.IsSteamVRInstalled {
+		if c.IsSteamVRManaged {
+			AddToStartup()
+		} else {
+			RemoveFromStartup()
+		}
 	} else {
-		RemoveFromStartup()
+		c.IsSteamVRManaged = false
 	}
 
-	os.WriteFile(c.GetConfigPath(), data, os.FileMode(os.O_CREATE))
+	os.WriteFile(c.GetConfigPath(), data, 0644)
 }
 
 func (c *Configuration) GetConfigPath() string {
@@ -154,7 +162,6 @@ func AddToStartup() {
 	fp = os.ExpandEnv("${ProgramFiles(x86)}\\Steam\\config\\vrappconfig")
 
 	_ = os.WriteFile(path.Join(fp, "com.github.dhcpcd9.base-station-manager.vrappconfig"), []byte(vrappconfig), 0644)
-
 }
 
 func RemoveFromStartup() {
@@ -163,4 +170,16 @@ func RemoveFromStartup() {
 	if err := os.Remove(fp); err != nil {
 		log.Println("Failed to write config.")
 	}
+}
+
+func GetSteamVRInstalled() bool {
+	fp := os.ExpandEnv("${ProgramFiles(x86)}\\Steam\\config\\appconfig.json")
+
+	_, err := os.ReadFile(fp)
+
+	if err != nil {
+		return false
+	}
+
+	return true
 }
