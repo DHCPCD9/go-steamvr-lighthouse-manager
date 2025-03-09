@@ -53,11 +53,11 @@ export function TitleBar() {
         (async () => {
             if (!steamVRManagementEnabled) return;
             if (steamVRLaunched && !previousState) {
-                 setPreviousState(false);
+                 setPreviousState(true);
                  return await bulkUpdate("awake");
             }
 
-            setPreviousState(true);
+            setPreviousState(false);
             await bulkUpdate("sleep");
 
         })()
