@@ -14,8 +14,8 @@
     "Settings": "设置",
     "Language": "语言",
     "Language of the interface": "界面语言",
-    "Active": "激活",
-    "Inactive": "未激活",
+    "Active": "运行中",
+    "Inactive": "未启动",
     "Source code": "源码"
 
 }
