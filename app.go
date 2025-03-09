@@ -77,7 +77,9 @@ func (a *App) InitBluetooth() bool {
 		return false
 	}
 
-	go adapter.Scan(ScanCallback)
+	go adapter.Scan(func(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
+		go ScanCallback(a, sr)
+	})
 
 	a.bluetoothInitFinished = true
 	return true
