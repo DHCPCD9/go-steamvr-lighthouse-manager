@@ -24,6 +24,9 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId: "2defdeea-4350-43ad-beed-bc65f1b7cd69",
+		},
 		Frameless:        true,
 		BackgroundColour: &options.RGBA{R: 18, G: 18, B: 18, A: 1},
 		OnStartup:        app.startup,
