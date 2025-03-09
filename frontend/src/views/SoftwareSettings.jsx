@@ -70,7 +70,12 @@ export function SoftwareSettings() {
     
     const languageNames = {
         en: "English",
-        ru: "Русский"
+        ru: "Русский",
+        zh: "中文",
+        de: "Deutsch",
+        kr: "한국어",
+        jp: "日本語",
+        ua: "Українська"
     }
 
     const languages = Object.keys(i18n.store.data);
