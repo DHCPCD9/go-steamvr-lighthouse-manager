@@ -2,6 +2,8 @@ import { useEffect, useState } from 'preact/hooks'
 import { Checkbox } from '../components/Checkbox'
 import { ContainerTitleBar } from '../components/ContainerTitleBar';
 import { ForceUpdate, GetConfiguration, GetVersion, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
+import { useTranslation } from 'react-i18next';
+import { DropdownOption } from '../components/Dropdown';
 
 export function SoftwareSettings() {
 
@@ -9,11 +11,13 @@ export function SoftwareSettings() {
     const [config, setConfig] = useState();
     const [version, setVersion] = useState();
     const [updateLocked, setUpdateLocked] = useState();
-    const [updateText, sestUpdateText] = useState("Check"); // I think there is better way to do it, but it works anyways
+    const { t, i18n } = useTranslation();
+    const [updateText, setUpdateText] = useState(t("Check")); // I think there is better way to do it, but it works anyways
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     useEffect(() => {
         (async () => {
-            await window.runtime.WindowSetSize(700, 278);
+            await window.runtime.WindowSetSize(700, 350);
 
             let config = await GetConfiguration();
             setConfig(config);
@@ -21,6 +25,16 @@ export function SoftwareSettings() {
             setVersion(await GetVersion());
         })()
     }, []);
+
+    useEffect(() => {
+        (async () => {
+            if (dropdownOpen) {
+                return await window.runtime.WindowSetSize(700, 400)
+            }
+
+            await window.runtime.WindowSetSize(700, 350);
+        })()
+    }, [dropdownOpen])
 
     useEffect(() => {
         (async () => {
@@ -42,26 +56,42 @@ export function SoftwareSettings() {
             return;
         }
 
-        sestUpdateText("You are on the latest version!");
+        setUpdateText(t("You are on the latest version!"));
         setUpdateLocked(false);
 
         setTimeout(() => {
-            sestUpdateText("Check");
+            setUpdateText(t("Check"));
         }, 1500);
     } 
+
+    useEffect(() => {
+        setUpdateText(t("Check"));
+    }, [i18n.language])
     
+    const languageNames = {
+        en: "English",
+        ru: "Русский"
+    }
+
+    const languages = Object.keys(i18n.store.data);
+
     return (<div className="poppins-semibold text-white py-[12px] px-[24px] select-none">
-        <ContainerTitleBar items={["SteamVR LM", "Settings"]}/>
+        <ContainerTitleBar items={["SteamVR LM", t("Settings")]}/>
 
         <div className='flex flex-col gap-[8px] w-full pt-[8px]'>
+
+            <DropdownOption title={t("Language")} description={t("Language of the interface")} setValue={i18n.changeLanguage} value={{ title: languageNames[i18n.language], value: i18n.language }} items={languages.filter(c => c != "cimode").map(c => {
+                return { title: languageNames[c]??c, value: c }
+            })} open={dropdownOpen} setOpen={setDropdownOpen} lockedValues={[]}/>
+            
             <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] p-[16px] rounded-[6px]'>
                 <div>
                     <div className='flex flex-col'>
                         <span className='text-white text-[14px] poppins-regular'>
-                            Manage Base Station Power
+                            {t("Manage Base Station Power")}
                         </span>
                         <span className='text-white text-[12px] opacity-80 poppins-regular'>
-                            Manage Power based on SteamVR launched or not
+                            {t("Manage Power based on SteamVR launched or not")}
                         </span>
                     </div>
                 </div>
@@ -74,15 +104,15 @@ export function SoftwareSettings() {
                 <div>
                     <div className='flex flex-col'>
                         <span className='text-white text-[14px] poppins-regular'>
-                            Check for updates
+                            {t("Check for updates")}
                         </span>
                         <span className='text-white text-[12px] opacity-80 poppins-regular'>
-                            Check for a new version
+                            {t("Check for a new version")}
                         </span>
                     </div>
                 </div>
                 <div>
-                    <button disabled={updateLocked} className='py-[8px] px-[32px] disabled:bg-[#2A63AB] disabled:hover:bg-[#2A63AB] disabled:cursor-not-allowed cursor-pointer bg-[#1D81FF] rounded-[6px] duration-100 hover:bg-[#66AAFF] cursor-pointer' onClick={checkForUpdates}>
+                    <button disabled={updateLocked} className='text-[12px] py-[8px] px-[32px] disabled:bg-[#2A63AB] disabled:hover:bg-[#2A63AB] disabled:cursor-not-allowed cursor-pointer bg-[#1D81FF] rounded-[6px] duration-100 hover:bg-[#66AAFF] cursor-pointer' onClick={checkForUpdates}>
                         {updateText}
                     </button>
                 </div>
@@ -91,11 +121,15 @@ export function SoftwareSettings() {
         <div className='flex flex-row justify-between pt-[2px]'>
             <div className='text-[12px] poppins-regular flex flex-row gap-[12px]'>
                 <span>
-                    Made by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://lisek.cc")} >Alumi</button>
+                    {t("Made by")} <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://lisek.cc")} >Alumi</button>
                 </span>
                 
                 <span>
-                    Design by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")}>Klonerovsky</button>
+                    {t("Design by")} <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")}>Klonerovsky</button>
+                </span>
+
+                <span>
+                    <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager")}>{t("Source code")}</button>
                 </span>
                 </div>
 

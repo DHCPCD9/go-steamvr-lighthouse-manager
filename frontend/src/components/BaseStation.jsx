@@ -7,6 +7,7 @@ import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wails
 import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { route } from "preact-router";
+import { useTranslation } from "react-i18next";
 export function BaseStation({ station, setCurrentBaseStation }) {
 
     const isAwoke = [0x0B, 0x01, 0x09].includes(station.PowerState);
@@ -39,6 +40,7 @@ export function BaseStation({ station, setCurrentBaseStation }) {
         setPowerState(0x0B);
     }
 
+    const { t } = useTranslation();
     
 
     return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer">
@@ -51,7 +53,7 @@ export function BaseStation({ station, setCurrentBaseStation }) {
 
                 </span>
                 <span className="text-[#C6C6C6]">
-                    Channel {station.Channel}
+                    {t("Channel")} {station.Channel}
                 </span>
             </div>
         </div>

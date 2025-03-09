@@ -1,0 +1,21 @@
+{
+    "Devices": "Устройства",
+    "devices": "Устройства",
+    "No base stations seem to be found, maybe other programs are connected to them?": "Базовых станций не найдено, возможно другие програмы/устройства подключены к им?",
+    "Channel": "Канал",
+    "Base station channel to operate": "Канал базовой станции",
+    "You are on the latest version!": "Вы находитесь на последней версии!",
+    "Check": "Проверить",
+    "Manage Base Station Power": "Управление питанием базовых станций",
+    "Manage Power based on SteamVR launched or not": "Включать/Выключать базовые станции в зависимости от SteamVR",
+    "Check for updates": "Проверка на обновления",
+    "Check for a new version": "Проверить, есть ли новые версии этой программы",
+    "Made by": "Сделано",
+    "Design by": "Дизайн от",
+    "Settings": "Настройки",
+    "Language": "Язык",
+    "Language of the interface": "Язык интерфейса",
+    "Active": "Активен",
+    "Inactive": "Неактивен",
+    "Source code": "Исходный код"
+}

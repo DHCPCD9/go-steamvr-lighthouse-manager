@@ -6,6 +6,7 @@ import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { TitleBarSettingsIcon } from "../assets/icons/TitleBarSettingsIcon";
 import { CloseIcon } from "../assets/icons/CloseIcon";
 import { route } from "preact-router";
+import { useTranslation } from "react-i18next";
 
 
 
@@ -15,6 +16,7 @@ export function TitleBar() {
     const [steamVRLaunched, setSteamVRLaunched] = useState(false);
     const [previousState, setPreviousState] = useState(false);
     const [steamVRManagementEnabled, setSteamVRManagementEnabled] = useState(true);
+    const { t } = useTranslation();
 
     const bulkUpdate = async (state) => {
         
@@ -50,13 +52,14 @@ export function TitleBar() {
     useEffect(() => {
         (async () => {
             if (!steamVRManagementEnabled) return;
-            if (steamVRLaunched) {
+            if (steamVRLaunched && !previousState) {
                  setPreviousState(false);
                  return await bulkUpdate("awake");
             }
 
             setPreviousState(true);
-            return await bulkUpdate("sleep");
+            await bulkUpdate("sleep");
+
         })()
     }, [steamVRLaunched]);
 
@@ -73,10 +76,6 @@ export function TitleBar() {
         console.log("Putting all base station in sleep mode");
         setPreviousState(true);
         await bulkUpdate("sleep");
-        
-
-        //Shuttind down
-        return await Shutdown();
     }
 
     return <div className="flex flex-row justify-between pt-[16px] px-[24px] select-none" style={"--wails-draggable:drag"}>
@@ -92,7 +91,7 @@ export function TitleBar() {
             <AnimatePresence>
                 {steamVRAvailable && steamVRManagementEnabled && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
                     <span className="text-[##C6C6C6]">SteamVR</span>
-                    <span className={`data-[active="true"]:text-[#7AFF73] text-[#FF7373] duration-200`} data-active={steamVRLaunched}>{steamVRLaunched ? "Active" : "Inactive"} </span>
+                    <span className={`data-[active="true"]:text-[#7AFF73] text-[#FF7373] duration-200`} data-active={steamVRLaunched}>{steamVRLaunched ? t("Active") : t("Inactive")} </span>
                 </div></motion.div>}
 
 

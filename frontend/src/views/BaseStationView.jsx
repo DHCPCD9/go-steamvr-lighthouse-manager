@@ -5,13 +5,14 @@ import { Loader, Loader2Icon } from "lucide-preact";
 import { GetFoundBaseStations, InitBluetooth } from "../../wailsjs/go/main/App";
 import { smoothResize } from "../utils/windows";
 import { ContainerTitleBar } from "../components/ContainerTitleBar";
+import { useTranslation } from "react-i18next";
 export function BaseStationsList() {
 
     const [searching, setSearching] = useState(true);
     const [baseStations, setBaseStations] = useState([]);
-    const [message, setMessage] = useState();
-    const [scanInterval, setScanInterval] = useState();
     const [activeBaseStation, setActiveBaseStation] = useState();
+
+    const { t, i18n } = useTranslation();
 
     useEffect(() => {
         let interval;
@@ -51,7 +52,7 @@ export function BaseStationsList() {
 
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white py-[6px] px-[24px] text-[24px] poppins-medium flex flex-row gap-[12px] items-center">
-            <ContainerTitleBar items={["Devices", activeBaseStation ? activeBaseStation : null]} />
+            <ContainerTitleBar items={[t("Devices"), activeBaseStation ? activeBaseStation : null]} />
         </div>
         <div>
             <AnimatePresence>
@@ -64,13 +65,13 @@ export function BaseStationsList() {
                         </motion.div>
                     )}
 
-                    {searching ? <motion.div key={99} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    {searching && !baseStations.length ? <motion.div key={99} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <div className="flex flex-row justify-center">
                             <Loader2Icon className={"animate-spin"} color="white" />
                         </div>
                     </motion.div> : null}
                     {!baseStations.length && !searching && <motion.div key={1337} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="poppins-regular text-center text-[14px] text-[#C6C6C6]">
-                        No base stations seem to be found, maybe other programs are connected to them?
+                        {t("No base stations seem to be found, maybe other programs are connected to them?")}
                     </motion.div>}
                 </div>
 
