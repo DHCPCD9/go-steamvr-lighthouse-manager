@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { Checkbox } from '../components/Checkbox'
 import { ContainerTitleBar } from '../components/ContainerTitleBar';
 import { ForceUpdate, GetConfiguration, GetVersion, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 
 export function SoftwareSettings() {
@@ -126,11 +126,15 @@ export function SoftwareSettings() {
         <div className='flex flex-row justify-between pt-[2px]'>
             <div className='text-[12px] poppins-regular flex flex-row gap-[12px]'>
                 <span>
-                    {t("Made by")} <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://lisek.cc")} >Alumi</button>
+                    <Trans i18nKey={"Made By"}>
+                        Made by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://lisek.cc")}>Alumi</button>
+                    </Trans>
                 </span>
                 
                 <span>
-                    {t("Design by")} <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")}>Klonerovsky</button>
+                    <Trans i18nKey={"Design By"}>
+                        Design by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")}>Klonerovsky</button>
+                    </Trans>
                 </span>
 
                 <span>
