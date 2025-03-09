@@ -10,12 +10,15 @@ import (
 
 	_ "embed"
 
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"tinygo.org/x/bluetooth"
 )
 
 var adapter = bluetooth.DefaultAdapter
 var knownDeviceNames []string = []string{}
-var baseStationsConnected map[string]*BaseStation = make(map[string]*BaseStation)
+
+// var baseStationsConnected map[string]*BaseStation = make(map[string]*BaseStation)
+var baseStationsConnected = cmap.New[*BaseStation]()
 var config Configuration = GetConfiguration()
 
 //go:embed VERSION
@@ -41,7 +44,7 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) GetFoundBaseStations() map[string]*BaseStation {
-	return baseStationsConnected
+	return baseStationsConnected.Items()
 }
 
 func (a *App) GetConfiguration() Configuration {
@@ -115,7 +118,7 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 	bs.Channel = int(bs.GetChannel())
 	bs.PowerState = int(bs.GetPowerState())
 
-	baseStationsConnected[sr.LocalName()] = bs
+	baseStationsConnected.Set(sr.LocalName(), bs)
 	defer conn.Disconnect()
 
 	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
@@ -134,22 +137,22 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 }
 
 func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string) string {
-	bs := baseStationsConnected[baseStationMac]
+	bs, found := baseStationsConnected.Get(baseStationMac)
 
-	if bs == nil {
+	if !found {
 		return "Unknown base station"
 	}
 
 	switch status {
 	case "standingby":
 		bs.SetPowerState(0x02)
-		baseStationsConnected[bs.Name].PowerState = 0x02
+		bs.PowerState = 0x02
 	case "sleep":
 		bs.SetPowerState(0x00)
-		baseStationsConnected[bs.Name].PowerState = 0x00
+		bs.PowerState = 0x00
 	case "awake":
 		bs.SetPowerState(0x01)
-		baseStationsConnected[bs.Name].PowerState = 0x01
+		bs.PowerState = 0x01
 	default:
 		return "unknown status"
 	}
@@ -158,13 +161,13 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 }
 
 func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) string {
-	bs := baseStationsConnected[baseStationMac]
+	bs, found := baseStationsConnected.Get(baseStationMac)
 
-	if bs == nil {
+	if !found {
 		return "Unknown base station"
 	}
 
-	for _, v := range baseStationsConnected {
+	for _, v := range baseStationsConnected.Items() {
 		if v.Channel == channel {
 			return "error: This channel conflicts with another base station"
 		}
@@ -176,14 +179,17 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 
 	bs.SetChannel(channel)
 	bs.Channel = channel
+	if bs.PowerState == 0 {
+		bs.PowerState = BS_POWERSTATE_AWAKE
+	}
 
 	return "ok"
 }
 
 func (a *App) IdentitifyBaseStation(baseStationMac string) string {
-	bs := baseStationsConnected[baseStationMac]
+	bs, found := baseStationsConnected.Get(baseStationMac)
 
-	if bs == nil {
+	if !found {
 		return "Unknown base station"
 	}
 
@@ -193,7 +199,7 @@ func (a *App) IdentitifyBaseStation(baseStationMac string) string {
 }
 
 func (a *App) Shutdown() {
-	for _, bs := range baseStationsConnected {
+	for _, bs := range baseStationsConnected.Items() {
 		bs.p.Disconnect()
 	}
 
@@ -220,7 +226,7 @@ func (a *App) IsSteamVRConnected() bool {
 }
 
 func (a *App) WakeUpAllBaseStations() {
-	for _, c := range baseStationsConnected {
+	for _, c := range baseStationsConnected.Items() {
 
 		if c.PowerState == BS_POWERSTATE_AWAKE {
 			continue
@@ -231,7 +237,7 @@ func (a *App) WakeUpAllBaseStations() {
 }
 
 func (a *App) SleepAllBaseStations() {
-	for _, c := range baseStationsConnected {
+	for _, c := range baseStationsConnected.Items() {
 		if c.PowerState != BS_POWERSTATE_AWAKE {
 			continue
 		}

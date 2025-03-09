@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	github.com/google/go-github/v69 v69.2.0
+	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/wailsapp/wails/v2 v2.10.0
 	tinygo.org/x/bluetooth v0.11.0
 )
