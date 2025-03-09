@@ -71,7 +71,8 @@ export function SoftwareSettings() {
     const languageNames = {
         en: "English",
         ru: "Русский",
-        zh: "中文",
+        zh_cn: "简体中文",
+        zh_cht: "繁体中文",
         de: "Deutsch",
         kr: "한국어",
         jp: "日本語",
