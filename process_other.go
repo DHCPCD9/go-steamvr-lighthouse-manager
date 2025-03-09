@@ -1,8 +1,7 @@
+//go:build !windows
 // +build !windows
-package main
 
-import (
-)
+package main
 
 func isProcRunning(names ...string) (bool, error) {
 	return false, nil
