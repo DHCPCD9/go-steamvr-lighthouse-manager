@@ -182,6 +182,9 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 
 	bs.SetChannel(channel)
 	bs.Channel = channel
+	if bs.PowerState == 0 {
+		bs.PowerState = BS_POWERSTATE_AWAKE
+	}
 
 	return "ok"
 }
