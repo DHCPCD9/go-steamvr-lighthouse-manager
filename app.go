@@ -59,6 +59,10 @@ func (a *App) ForceUpdate() {
 	ForceUpdate()
 }
 
+func (a *App) IsUpdatingSupported() bool {
+	return IsUpdatingSupported()
+}
+
 func (a *App) ToggleSteamVRManagement() Configuration {
 	config.IsSteamVRManaged = !config.IsSteamVRManaged
 

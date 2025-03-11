@@ -6,6 +6,7 @@ require (
 	github.com/google/go-github/v69 v69.2.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/wailsapp/wails/v2 v2.10.0
+	golang.org/x/sys v0.30.0
 	tinygo.org/x/bluetooth v0.11.0
 )
 
@@ -42,7 +43,6 @@ require (
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 )
 

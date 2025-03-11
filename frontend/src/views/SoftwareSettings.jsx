@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Checkbox } from '../components/Checkbox'
 import { ContainerTitleBar } from '../components/ContainerTitleBar';
-import { ForceUpdate, GetConfiguration, GetVersion, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
+import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
 import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 
 export function SoftwareSettings() {
 
+    //TODO: Reduce hooks amount
     const [managePower, setManagePower] = useState(false);
     const [config, setConfig] = useState();
+    const [isUpdatingSupported, setIsUpdatingSupported] = useState(false);
+    const [steamVRAvailable, setsteamVRAvailable] = useState(false);
     const [version, setVersion] = useState();
     const [updateLocked, setUpdateLocked] = useState();
     const { t, i18n } = useTranslation();
     const [updateText, setUpdateText] = useState(t("Check")); // I think there is better way to do it, but it works anyways
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    
 
     useEffect(() => {
         (async () => {
@@ -23,6 +27,8 @@ export function SoftwareSettings() {
             setConfig(config);
             setManagePower(config.is_steamvr_managed);
             setVersion(await GetVersion());
+            setIsUpdatingSupported(await IsUpdatingSupported());
+            setsteamVRAvailable(await IsSteamVRConnectivityAvailable());
         })()
     }, []);
 
@@ -47,6 +53,8 @@ export function SoftwareSettings() {
     }, [managePower, config]);
 
     const checkForUpdates = async () => {
+
+        if (!isUpdatingSupported) return window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager/releases/latest");
         setUpdateLocked(true);
         let onlineVersion = await fetch("https://raw.githubusercontent.com/DHCPCD9/go-steamvr-lighthouse-manager/refs/heads/main/VERSION").then(r => r.text()).then(v => v.trim());
 
@@ -65,8 +73,12 @@ export function SoftwareSettings() {
     } 
 
     useEffect(() => {
+
+        if (!isUpdatingSupported) {
+            return setUpdateText(t("Get new build from Github"));
+        }
         setUpdateText(t("Check"));
-    }, [i18n.language])
+    }, [i18n.language, isUpdatingSupported])
     
     const languageNames = {
         en: "English",
@@ -97,12 +109,12 @@ export function SoftwareSettings() {
                             {t("Manage Base Station Power")}
                         </span>
                         <span className='text-white text-[12px] opacity-80 poppins-regular'>
-                            {t("Manage Power based on SteamVR launched or not")}
+                            {steamVRAvailable && config.is_steamvr_installed ? t("Manage Power based on SteamVR launched or not") : t("SteamVR not found or this platform is not supported")}
                         </span>
                     </div>
                 </div>
                 <div>
-                    <Checkbox value={managePower} SetValue={setManagePower}/>
+                    <Checkbox disabled={!steamVRAvailable || !config.is_steamvr_installed} value={managePower} SetValue={setManagePower}/>
                 </div>
             </div>
 
@@ -113,7 +125,7 @@ export function SoftwareSettings() {
                             {t("Check for updates")}
                         </span>
                         <span className='text-white text-[12px] opacity-80 poppins-regular'>
-                            {t("Check for a new version")}
+                            {isUpdatingSupported ? t("Check for a new version") : t("Updating for portable builds or this platform is not supported.")}
                         </span>
                     </div>
                 </div>
