@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"slices"
 	"strings"
 
 	_ "embed"
@@ -15,7 +14,6 @@ import (
 )
 
 var adapter = bluetooth.DefaultAdapter
-var knownDeviceNames []string = []string{}
 
 // var baseStationsConnected map[string]*BaseStation = make(map[string]*BaseStation)
 var baseStationsConnected = cmap.New[*BaseStation]()
@@ -90,13 +88,6 @@ func (a *App) InitBluetooth() bool {
 }
 
 func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
-
-	if slices.Contains(knownDeviceNames, sr.LocalName()) {
-		return
-	}
-
-	knownDeviceNames = append(knownDeviceNames, sr.LocalName())
-
 	if !strings.HasPrefix(sr.LocalName(), "LHB-") {
 		return
 	}
