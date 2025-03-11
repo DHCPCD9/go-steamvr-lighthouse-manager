@@ -16,6 +16,9 @@
     "Language of the interface": "界面语言",
     "Active": "激活",
     "Inactive": "未激活",
-    "Source code": "源码"
+    "Source code": "源码",
+    "Updating for portable builds or this platform is not supported.": "Updating for portable builds or this platform is not supported.",
+    "Get new build from Github": "Get new build from GitHub",
+    "SteamVR not found or this platform is not supported": "SteamVR not found or this platform is not supported"
 
 }

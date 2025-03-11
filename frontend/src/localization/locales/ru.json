@@ -17,5 +17,8 @@
     "Language of the interface": "Язык интерфейса",
     "Active": "Активен",
     "Inactive": "Неактивен",
-    "Source code": "Исходный код"
+    "Source code": "Исходный код",
+    "Updating for portable builds or this platform is not supported.": "Обновления на Portable-приложении или этот системе не поддерживаються.",
+    "Get new build from Github": "Скачать новую версию с GitHub",
+    "SteamVR not found or this platform is not supported": "SteamVR не найден или эта платформа не поддерживаеться"
 }
