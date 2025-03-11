@@ -42,6 +42,10 @@ export function IsSteamVRConnectivityAvailable() {
   return window['go']['main']['App']['IsSteamVRConnectivityAvailable']();
 }
 
+export function IsUpdatingSupported() {
+  return window['go']['main']['App']['IsUpdatingSupported']();
+}
+
 export function Shutdown() {
   return window['go']['main']['App']['Shutdown']();
 }

@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 package main
 
 import (
@@ -12,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v69/github"
+	"golang.org/x/sys/windows/registry"
 )
 
 func ForceUpdate() {
@@ -48,4 +52,11 @@ func ForceUpdate() {
 
 		}
 	}
+}
+
+func IsUpdatingSupported() bool {
+	//probing regedit
+	_, err := registry.OpenKey(registry.LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Alumi Inc.Base Station Manager", registry.QUERY_VALUE)
+
+	return err == nil
 }

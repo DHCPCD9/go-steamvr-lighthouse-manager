@@ -22,6 +22,8 @@ export function IsSteamVRConnected():Promise<boolean>;
 
 export function IsSteamVRConnectivityAvailable():Promise<boolean>;
 
+export function IsUpdatingSupported():Promise<boolean>;
+
 export function Shutdown():Promise<void>;
 
 export function SleepAllBaseStations():Promise<void>;
