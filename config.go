@@ -10,14 +10,14 @@ import (
 	"strings"
 )
 
-//go:embed manifest.vrmanifest
+//go:embed steamvr/manifest.vrmanifest
 var manifest string
 
-//go:embed com.github.dhcpcd9.base-station-manager.vrappconfig
+//go:embed steamvr/com.github.dhcpcd9.base-station-manager.vrappconfig
 var vrappconfig string
 
 type Configuration struct {
-	IsSteamVRManaged bool `json:"is_steamvr_managed"`
+	IsSteamVRManaged   bool `json:"is_steamvr_managed"`
 	IsSteamVRInstalled bool `json:"is_steamvr_installed"`
 }
 
