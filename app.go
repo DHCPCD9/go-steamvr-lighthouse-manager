@@ -88,7 +88,12 @@ func (a *App) InitBluetooth() bool {
 }
 
 func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
+
 	if !strings.HasPrefix(sr.LocalName(), "LHB-") {
+		return
+	}
+
+	if baseStationsConnected.Has(sr.LocalName()) {
 		return
 	}
 
