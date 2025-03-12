@@ -14,10 +14,10 @@
     "Settings": "设置",
     "Language": "语言",
     "Language of the interface": "界面语言",
-    "Active": "激活",
-    "Inactive": "未激活",
+    "Active": "活跃",
+    "Inactive": "不活跃",
     "Source code": "源码",
-    "Updating for portable builds or this platform is not supported.": "Updating for portable builds or this platform is not supported.",
-    "Get new build from Github": "Get new build from GitHub",
-    "SteamVR not found or this platform is not supported": "SteamVR not found or this platform is not supported"
+    "Updating for portable builds or this platform is not supported.": "试图更新移动版或不支持当前平台更新。",
+    "Get new build from Github": "从Github获取最新构建版本",
+    "SteamVR not found or this platform is not supported": "未发现SteamVR或不支持当前平台"
 }
