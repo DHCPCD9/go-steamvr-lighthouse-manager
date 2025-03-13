@@ -43,7 +43,7 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter) *
 			log.Println("Found service")
 			foundService = service
 
-			break // Прерываем цикл после нахождения сервиса
+			break
 		}
 	}
 
@@ -130,7 +130,7 @@ func (bs *BaseStation) GetPowerState() int16 {
 		return -1
 	}
 
-	data := make([]byte, 2) // Буфер достаточного размера
+	data := make([]byte, 2)
 	_, err := bs.powerStateCharacteristic.Read(data)
 	if err != nil {
 		log.Printf("Read error: %v", err)
