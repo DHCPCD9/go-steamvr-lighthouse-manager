@@ -66,14 +66,14 @@ export function BaseStation({ station, refreshBaseStations }) {
 
             
             {isAwoke ? <motion.div key={"identitfy"} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25"} onClick={identitify} disabled={identitfyDisabled}>
+                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-110"} onClick={identitify} disabled={identitfyDisabled}>
                     <VisibilityIcon />
                 </button>
             </motion.div>
             : null}
 
             <motion.div key={"awoke"}>
-                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" onClick={updatePowerState}>
+                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-110" onClick={updatePowerState}>
                    <PowerStatusIcon class={`fill-[#C6C6C6]`} />
                 </button>
             </motion.div>

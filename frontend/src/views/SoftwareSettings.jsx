@@ -4,6 +4,7 @@ import { ContainerTitleBar } from '../components/ContainerTitleBar';
 import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
 import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
+import { smoothResize } from '../utils/windows';
 
 export function SoftwareSettings() {
 
@@ -21,7 +22,7 @@ export function SoftwareSettings() {
 
     useEffect(() => {
         (async () => {
-            await window.runtime.WindowSetSize(700, 350);
+            await smoothResize(700, 350);
 
             let config = await GetConfiguration();
             setConfig(config);
@@ -35,10 +36,10 @@ export function SoftwareSettings() {
     useEffect(() => {
         (async () => {
             if (dropdownOpen) {
-                return await window.runtime.WindowSetSize(700, 400)
+                return await smoothResize(700, 400)
             }
 
-            await window.runtime.WindowSetSize(700, 350);
+            await smoothResize(700, 350);
         })()
     }, [dropdownOpen])
 
