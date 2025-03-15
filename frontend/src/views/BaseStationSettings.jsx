@@ -26,7 +26,7 @@ export function BaseStationSettingsPage() {
             let baseStations = await GetFoundBaseStations();
             setLighthouse(baseStations[matches.id]);
 
-            setChannel(baseStations[matches.id].Channel);
+            setChannel(baseStations[matches.id].channel);
 
         })()
     }, []);
@@ -70,7 +70,7 @@ export function BaseStationSettingsPage() {
             <ContainerTitleBar items={[t("Devices"), matches.id]} />
         </div>
         <div className="text-white poppins-regular px-[24px]">
-            <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.Channel) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: channel, value: channel }} items={[...Array(16).keys().map(c => {
+            <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: channel, value: channel }} items={[...Array(16).keys().map(c => {
                 return { title: c + 1, value: c + 1 }
             })]} />
         </div>

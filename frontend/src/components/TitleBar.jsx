@@ -21,7 +21,7 @@ export function TitleBar() {
     const bulkUpdate = async (state) => {
         
         for(const baseSation of Object.values(await GetFoundBaseStations())) {
-            await ChangeBaseStationPowerStatus(baseSation.Name, state);
+            await ChangeBaseStationPowerStatus(baseSation.name, state);
         }
     }
 

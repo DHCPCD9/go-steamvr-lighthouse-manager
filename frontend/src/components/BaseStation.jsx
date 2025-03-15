@@ -8,14 +8,14 @@ import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { route } from "preact-router";
 import { useTranslation } from "react-i18next";
-export function BaseStation({ station, setCurrentBaseStation }) {
+export function BaseStation({ station, refreshBaseStations }) {
 
-    const isAwoke = [0x0B, 0x01, 0x09].includes(station.PowerState);
+    const isAwoke = [0x0B, 0x01, 0x09].includes(station.power_state);
 
     const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);    
     const identitify = async () => {
         
-        let result = await IdentitifyBaseStation(station.Name);
+        let result = await IdentitifyBaseStation(station.name);
 
         if (result != "ok") return alert(result);
 
@@ -29,31 +29,34 @@ export function BaseStation({ station, setCurrentBaseStation }) {
     const updatePowerState = async () => {
         if (isAwoke) {
             //Sleeping of
-            let result = await ChangeBaseStationPowerStatus(station.Name, "sleep");
+            let result = await ChangeBaseStationPowerStatus(station.name, "sleep");
             if (result != "ok") return alert(result);
 
-            return setPowerState(0x00);
+            setPowerState(0x00);
+
+            return await refreshBaseStations();
         }
 
         //Waking it up
-        await ChangeBaseStationPowerStatus(station.Name, "awake");
+        await ChangeBaseStationPowerStatus(station.name, "awake");
         setPowerState(0x0B);
+        await refreshBaseStations();
     }
 
     const { t } = useTranslation();
     
 
     return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer">
-        <div className="flex flex-row gap-[16px] items-center" onClick={() => route(`/devices/${station.Name}`)}>
+        <div className="flex flex-row gap-[16px] items-center" onClick={() => route(`/devices/${station.name}`)}>
             <BaseStationIcon  />
             <div className="flex flex-col gap-[2px] text-[14px]">
                 <span className="flex flex-row gap-[6px] items-center">
-                    <span>{station.Name} </span>
+                    <span>{station.name} </span>
                    <StatusCircleIcon class={`data-[awoken="false"]:fill-red-500 fill-green-500 duration-300`}  data-awoken={isAwoke} />
 
                 </span>
                 <span className="text-[#C6C6C6]">
-                    {t("Channel")} {station.Channel}
+                {station.version == 2 && <>{t("Channel")} {station.channel}</>} {station.version == 1 && <>lighthouse v{station.version} </>}
                 </span>
             </div>
         </div>

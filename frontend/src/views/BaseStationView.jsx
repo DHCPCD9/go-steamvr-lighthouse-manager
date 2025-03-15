@@ -12,7 +12,13 @@ export function BaseStationsList() {
     const [baseStations, setBaseStations] = useState([]);
     const [activeBaseStation, setActiveBaseStation] = useState();
 
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+
+    const refreshBaseStations = async () => {
+        let baseStations = await GetFoundBaseStations();
+
+        setBaseStations(Object.values(baseStations));
+    }
 
     useEffect(() => {
         let interval;
@@ -24,9 +30,7 @@ export function BaseStationsList() {
             }
 
             interval = setInterval(async () => {
-                let baseStations = await GetFoundBaseStations();
-
-                setBaseStations(Object.values(baseStations));
+                await refreshBaseStations();
             }, 300);
         })()
 

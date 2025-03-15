@@ -10,7 +10,7 @@ export function ForceUpdate():Promise<void>;
 
 export function GetConfiguration():Promise<main.Configuration>;
 
-export function GetFoundBaseStations():Promise<Record<string, main.BaseStation>>;
+export function GetFoundBaseStations():Promise<Record<string, main.JsonBaseStations>>;
 
 export function GetVersion():Promise<string>;
 

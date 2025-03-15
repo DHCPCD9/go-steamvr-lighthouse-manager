@@ -177,9 +177,5 @@ func GetSteamVRInstalled() bool {
 
 	_, err := os.ReadFile(fp)
 
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }

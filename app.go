@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -15,9 +16,16 @@ import (
 
 var adapter = bluetooth.DefaultAdapter
 
-// var baseStationsConnected map[string]*BaseStation = make(map[string]*BaseStation)
 var baseStationsConnected = cmap.New[*BaseStation]()
 var config Configuration = GetConfiguration()
+
+type JsonBaseStations struct {
+	Name        string    `json:"name"`
+	Channel     int       `json:"channel"`
+	PowerState  int       `json:"power_state"`
+	LastUpdated time.Time `json:"last_updated"`
+	Version     int       `json:"version"`
+}
 
 //go:embed VERSION
 var version string
@@ -41,8 +49,22 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-func (a *App) GetFoundBaseStations() map[string]*BaseStation {
-	return baseStationsConnected.Items()
+func (a *App) GetFoundBaseStations() map[string]JsonBaseStations {
+
+	var result = make(map[string]JsonBaseStations)
+	for _, v := range baseStationsConnected.Items() {
+		bs := *v
+		result[bs.GetName()] = JsonBaseStations{
+			Name:        bs.GetName(),
+			Channel:     bs.GetChannel(),
+			PowerState:  bs.GetPowerState(),
+			LastUpdated: time.Now(),
+			Version:     bs.GetVersion(),
+		}
+
+	}
+
+	return result
 }
 
 func (a *App) GetConfiguration() Configuration {
@@ -106,19 +128,9 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 		return
 	}
 
-	bs := InitBaseStation(&conn, a)
+	bs := InitBaseStation(&conn, a, sr.LocalName())
 
-	if !bs.IsValidLighthouse {
-		return
-	}
-
-	bs.ScanCharacteristics()
-
-	bs.Name = sr.LocalName()
-	bs.Channel = int(bs.GetChannel())
-	bs.PowerState = int(bs.GetPowerState())
-
-	baseStationsConnected.Set(sr.LocalName(), bs)
+	baseStationsConnected.Set(sr.LocalName(), &bs)
 	defer conn.Disconnect()
 
 	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
@@ -137,22 +149,20 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 }
 
 func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string) string {
-	bs, found := baseStationsConnected.Get(baseStationMac)
+	baseStation, found := baseStationsConnected.Get(baseStationMac)
 
 	if !found {
 		return "Unknown base station"
 	}
 
+	bs := *baseStation
 	switch status {
 	case "standingby":
 		bs.SetPowerState(0x02)
-		bs.PowerState = 0x02
 	case "sleep":
 		bs.SetPowerState(0x00)
-		bs.PowerState = 0x00
 	case "awake":
 		bs.SetPowerState(0x01)
-		bs.PowerState = 0x01
 	default:
 		return "unknown status"
 	}
@@ -161,14 +171,15 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 }
 
 func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) string {
-	bs, found := baseStationsConnected.Get(baseStationMac)
+	baseStation, found := baseStationsConnected.Get(baseStationMac)
 
 	if !found {
 		return "Unknown base station"
 	}
 
 	for _, v := range baseStationsConnected.Items() {
-		if v.Channel == channel {
+		bs := *v
+		if bs.GetChannel() == channel {
 			return "error: This channel conflicts with another base station"
 		}
 	}
@@ -177,22 +188,21 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 		return "error: Channel exceeds limit"
 	}
 
+	bs := *baseStation
 	bs.SetChannel(channel)
-	bs.Channel = channel
-	if bs.PowerState == 0 {
-		bs.PowerState = BS_POWERSTATE_AWAKE
-	}
+	bs.SetPowerState(byte(BS_POWERSTATE_AWAKE))
 
 	return "ok"
 }
 
 func (a *App) IdentitifyBaseStation(baseStationMac string) string {
-	bs, found := baseStationsConnected.Get(baseStationMac)
+	baseStation, found := baseStationsConnected.Get(baseStationMac)
 
 	if !found {
 		return "Unknown base station"
 	}
 
+	bs := *baseStation
 	bs.Identitfy()
 
 	return "ok"
@@ -200,7 +210,7 @@ func (a *App) IdentitifyBaseStation(baseStationMac string) string {
 
 func (a *App) Shutdown() {
 	for _, bs := range baseStationsConnected.Items() {
-		bs.p.Disconnect()
+		(*bs).Disconnect()
 	}
 
 	os.Exit(0)
@@ -228,22 +238,23 @@ func (a *App) IsSteamVRConnected() bool {
 func (a *App) WakeUpAllBaseStations() {
 	for _, c := range baseStationsConnected.Items() {
 
-		if c.PowerState == BS_POWERSTATE_AWAKE {
+		bs := *c
+		if bs.GetPowerState() == BS_POWERSTATE_AWAKE {
 			continue
 		}
-		c.SetPowerState(0x01)
-		c.PowerState = 0x01
+		bs.SetPowerState(0x01)
 	}
 }
 
 func (a *App) SleepAllBaseStations() {
 	for _, c := range baseStationsConnected.Items() {
-		if c.PowerState != BS_POWERSTATE_AWAKE {
+		bs := *c
+
+		if bs.GetPowerState() != BS_POWERSTATE_AWAKE {
 			continue
 		}
 
-		c.SetPowerState(0x01)
-		c.SetPowerState(0x00)
-		c.PowerState = 0x00
+		bs.SetPowerState(0x01)
+		bs.SetPowerState(0x00)
 	}
 }
