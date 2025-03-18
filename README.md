@@ -1,19 +1,31 @@
-# README
+## SteamVR Lighthouse Manager 
+A tool to control SteamVR Base Stations 2.0 on your PC.<br> It does not require a SteamVR Headset like HTC Vive or Valve Index, but still requires Bluetooth module to be enabled on your system.
 
-## About
+![Program Image](resources/Program.png) 
 
-This is the official Wails Preact template.
+### Features
+- Control base station power status (awake, sleep) with Bluetooth LE.
+- Control base station channel to operate on.
+- Automated base station power control at the start and end of the SteamVR session.
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+### Requirements
+- Bluetooth LE (4.0 or higher) 
+- SteamVR Base Station 2.0 
 
-## Live Development
+### How to use 
+1. Install & Run the program.
+2. Now all Base Stations should turn on and off automatically, if you want to disable it, just click on the "Settings" icon at the top and turn it off.
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+### License
+[GPLv3](https://github.com/DHCPCD9/go-steamvr-lighthouse-manager/blob/main/LICENSE)
 
-## Building
+### Contact
+ - VRChat: [Alumi Shinamo](https://vrchat.com/home/user/usr_98358fea-8df8-4c08-ab4f-db555ae4e959)
+ - X: [@AlumiShinamo](https://x.com/AlumiShinamo)
+ - Discord: @dhcpcd
 
-To build a redistributable, production mode package, use `wails build`.
+### Sponsor
+ - USDT TRC20: TDKHKZEnZihb1grhHiFanBaPv2TF9ADdDF
+ - BTC: bc1qk6hynnya9c5dexluhhcgukq598eunffw5yntpa
+ - LTC: MNEJjjZU1gmr67snvs8XB4FmFwfwAm952a
+ - ETH Mainnet: 0x67EFB56Fa96374571Af0c29CD38De89D42b20E83
