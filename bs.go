@@ -122,6 +122,7 @@ func (lv *LighthouseV2) ScanCharacteristics() bool {
 		lv.powerStateCharacteristic != nil,
 		lv.identifyCharacteristic != nil)
 
+	lv.ValidLighthouse = lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
 	return lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
 }
 
