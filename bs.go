@@ -15,7 +15,7 @@ var (
 )
 
 type BaseStation interface {
-	ScanCharacteristics()
+	ScanCharacteristics() bool
 	GetChannel() int
 	SetChannel(channel int)
 	GetPowerState() int
@@ -37,6 +37,7 @@ type LighthouseV2 struct {
 	CachedPowerState         int
 	CachedChannel            int
 	CacheTimer               *time.Ticker
+	ValidLighthouse          bool
 }
 
 func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, name string) BaseStation {
@@ -51,7 +52,7 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 		service := &services[i]
 		uuid := strings.ToUpper(service.UUID().String())
 		if uuid == "00001523-1212-EFDE-1523-785FEABCD124" {
-			log.Println("Found service")
+			log.Printf("Found lighthouse  service on base station %s\n", name)
 			foundService = service
 			break
 		}
@@ -70,7 +71,7 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 		CacheTimer:               time.NewTicker(time.Second * 10),
 	}
 
-	bs.ScanCharacteristics()
+	bs.ValidLighthouse = bs.ScanCharacteristics()
 
 	bs.CachedPowerState = bs.readPowerState()
 	bs.CachedChannel = bs.readChannel()
@@ -86,13 +87,14 @@ func (lv *LighthouseV2) StartCaching() {
 		lv.CachedPowerState = lv.readPowerState()
 		lv.CachedChannel = lv.readChannel()
 
-		log.Println("Force cache reset.")
+		// log.Printf("Force cache reset. - %s\n", lv.Name)
+		// We do not need to log it, because of how SSD work.
 	}
 }
-func (lv *LighthouseV2) ScanCharacteristics() {
+func (lv *LighthouseV2) ScanCharacteristics() bool {
 	if lv.service == nil {
-		log.Println("Service not found")
-		return
+		log.Printf("Lighthouse service on base station %s not found\n", lv.Name)
+		return false
 	}
 
 	characteristics, err := lv.service.DiscoverCharacteristics(nil)
@@ -114,18 +116,25 @@ func (lv *LighthouseV2) ScanCharacteristics() {
 		}
 	}
 
-	log.Println("Finished finding characteristics")
+	log.Printf("Finished finding characteristics on base station %s", lv.Name)
 	log.Printf("Mode: %v, Power: %v, ID: %v",
 		lv.modeCharacteristic != nil,
 		lv.powerStateCharacteristic != nil,
 		lv.identifyCharacteristic != nil)
+
+	return lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
 }
 
 func (lv *LighthouseV2) readChannel() int {
 
-	if lv.modeCharacteristic == nil {
-		log.Println("ModeCharacteristic is nil")
+	if !lv.ValidLighthouse {
 		return -1
+	}
+
+	if lv.modeCharacteristic == nil {
+		log.Printf("ModeCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		return lv.readChannel()
 	}
 
 	data := make([]byte, 2)
@@ -143,8 +152,15 @@ func (lv *LighthouseV2) GetChannel() int {
 }
 
 func (lv *LighthouseV2) SetChannel(channel int) {
+
+	if !lv.ValidLighthouse {
+		return
+	}
+
 	if lv.modeCharacteristic == nil {
-		log.Println("ModeCharacteristic is nil")
+		log.Printf("ModeCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		lv.SetChannel(channel)
 		return
 	}
 
@@ -157,9 +173,14 @@ func (lv *LighthouseV2) SetChannel(channel int) {
 }
 
 func (lv *LighthouseV2) readPowerState() int {
-	if lv.powerStateCharacteristic == nil {
-		log.Println("PowerStateCharacteristic is nil")
+	if !lv.ValidLighthouse {
 		return -1
+	}
+
+	if lv.powerStateCharacteristic == nil {
+		log.Printf("PowerStateCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		return lv.readPowerState()
 	}
 
 	data := make([]byte, 2)
@@ -177,8 +198,15 @@ func (lv *LighthouseV2) GetPowerState() int {
 }
 
 func (lv *LighthouseV2) SetPowerState(state byte) {
+
+	if !lv.ValidLighthouse {
+		return
+	}
+
 	if lv.powerStateCharacteristic == nil {
-		log.Println("PowerStateCharacteristic is nil")
+		log.Printf("PowerStateCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		lv.SetPowerState(state)
 		return
 	}
 
@@ -187,8 +215,15 @@ func (lv *LighthouseV2) SetPowerState(state byte) {
 }
 
 func (lv *LighthouseV2) Identitfy() {
+
+	if !lv.ValidLighthouse {
+		return
+	}
+
 	if lv.identifyCharacteristic == nil {
-		log.Println("identifyCharacteristic is nil")
+		log.Printf("IdentifyCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		lv.Identitfy()
 		return
 	}
 

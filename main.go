@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"log"
+	"os"
 
 	"github.com/wailsapp/wails/v2/pkg/application"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -12,6 +14,15 @@ import (
 var assets embed.FS
 
 func main() {
+
+	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+
 	// Create an instance of the app structure
 	app := NewApp()
 
@@ -35,9 +46,10 @@ func main() {
 		},
 	})
 
-	err := mainApp.Run()
+	err = mainApp.Run()
 
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatalln("Error:", err.Error())
 	}
+
 }
