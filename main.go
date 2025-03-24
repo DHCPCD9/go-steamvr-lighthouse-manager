@@ -3,8 +3,6 @@ package main
 import (
 	"embed"
 	"log"
-	"os"
-	"path"
 
 	"github.com/wailsapp/wails/v2/pkg/application"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -18,14 +16,6 @@ var assets embed.FS
 var icon []byte
 
 func main() {
-
-	f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
-
-	log.SetOutput(f)
 
 	// Create an instance of the app structure
 	app := NewApp()
@@ -41,6 +31,9 @@ func main() {
 		},
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId: "2defdeea-4350-43ad-beed-bc65f1b7cd69",
+			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
+				WAKE_UP_CHANNEL <- 1
+			},
 		},
 		Frameless:        true,
 		BackgroundColour: &options.RGBA{R: 18, G: 18, B: 18, A: 1},
@@ -50,7 +43,7 @@ func main() {
 		},
 	})
 
-	err = mainApp.Run()
+	err := mainApp.Run()
 
 	if err != nil {
 		log.Fatalln("Error:", err.Error())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"path"
 	"runtime"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ import (
 )
 
 var adapter = bluetooth.DefaultAdapter
-
+var WAKE_UP_CHANNEL = make(chan interface{})
 var baseStationsConnected = cmap.New[*BaseStation]()
 
 type JsonBaseStations struct {
@@ -46,11 +47,33 @@ func NewApp() *App {
 }
 
 func (a *App) startup(ctx context.Context) {
+
+	f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+
 	a.ctx = ctx
+
+	go func() {
+		for {
+			<-WAKE_UP_CHANNEL
+			wruntime.WindowShow(a.ctx)
+		}
+	}()
 
 	a.config = GetConfiguration()
 
-	systray.Run(a.trayReady, TrayExit)
+	if a.config.IsSteamVRManaged && runtime.GOOS == "windows" {
+		if running, _ := isProcRunning("vrserver"); running {
+			wruntime.WindowHide(a.ctx)
+		}
+	}
+
+	go systray.Run(a.trayReady, TrayExit)
 
 }
 
