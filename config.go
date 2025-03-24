@@ -115,6 +115,10 @@ func GetConfigFolder() string {
 		panic("Failed to find user config dir.")
 	}
 
+	if _, err = os.Stat(path.Join(appdataFolder, "Alumi", "Base Station Manager")); os.IsNotExist(err) {
+		os.MkdirAll(path.Join(appdataFolder, "Alumi", "Base Station Manager"), 0700)
+	}
+
 	return path.Join(appdataFolder, "Alumi", "Base Station Manager")
 }
 
