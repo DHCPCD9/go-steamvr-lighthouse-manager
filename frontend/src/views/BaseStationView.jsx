@@ -5,7 +5,7 @@ import { Loader, Loader2Icon } from "lucide-preact";
 import { GetFoundBaseStations, InitBluetooth } from "../../wailsjs/go/main/App";
 import { smoothResize } from "../utils/windows";
 import { ContainerTitleBar } from "../components/ContainerTitleBar";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 export function BaseStationsList() {
 
     const [searching, setSearching] = useState(true);
@@ -74,6 +74,12 @@ export function BaseStationsList() {
                             <Loader2Icon className={"animate-spin"} color="white" />
                         </div>
                     </motion.div> : null}
+
+                    {baseStations.length && baseStations.length < 4 && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: ((baseStations.length + 1) * 0.150)}} className="flex justify-center text-white/50 poppins-reglar">
+                        <Trans i18nKey={"Found base stations"}  count={baseStations.length}>
+                            Found {{ baseStations: baseStations.length }} Lighthouse(s)
+                        </Trans>
+                    </motion.div>}
                     {!baseStations.length && !searching && <motion.div key={1337} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="poppins-regular text-center text-[14px] text-[#C6C6C6]">
                         {t("No base stations seem to be found, maybe other programs are connected to them?")}
                     </motion.div>}
