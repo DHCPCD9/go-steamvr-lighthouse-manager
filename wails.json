@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "bs-manager-web",
-  "outputfilename": "bs-manager-web",
+  "name": "base-station-manager",
+  "outputfilename": "base-station-manager",
   "frontend:install": "yarn",
   "frontend:build": "yarn run build",
   "frontend:dev:watcher": "yarn run dev",
