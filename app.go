@@ -10,14 +10,16 @@ import (
 
 	_ "embed"
 
+	"github.com/gen2brain/beeep"
+	"github.com/getlantern/systray"
 	cmap "github.com/orcaman/concurrent-map/v2"
+	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"tinygo.org/x/bluetooth"
 )
 
 var adapter = bluetooth.DefaultAdapter
 
 var baseStationsConnected = cmap.New[*BaseStation]()
-var config Configuration = GetConfiguration()
 
 type JsonBaseStations struct {
 	Name        string    `json:"name"`
@@ -34,25 +36,74 @@ var version string
 type App struct {
 	ctx                   context.Context
 	bluetoothInitFinished bool
+	config                *Configuration
 }
 
-// NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{
 		bluetoothInitFinished: false,
 	}
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	a.config = GetConfiguration()
+
+	systray.Run(a.trayReady, TrayExit)
+
 }
 
+// I REALLY SHOULD NOT DO THAT
+func (a *App) trayReady() {
+	systray.SetIcon(icon)
+
+	showWindowCh := systray.AddMenuItem("Show", "Show the window")
+
+	systray.AddSeparator()
+	wakeUpCh := systray.AddMenuItem("Wake up", "Wakes up all found Lighthouses.")
+	sleepCh := systray.AddMenuItem("Sleep", "Puts all found Lighthouses in sleep mode.")
+	systray.AddSeparator()
+
+	quitCh := systray.AddMenuItem("Quit", "Quits programm fully")
+
+	go func() {
+		for {
+			select {
+			case <-showWindowCh.ClickedCh:
+				wruntime.WindowShow(a.ctx)
+				continue
+			case <-wakeUpCh.ClickedCh:
+				a.WakeUpAllBaseStations()
+				continue
+			case <-sleepCh.ClickedCh:
+				a.SleepAllBaseStations()
+				continue
+			case <-quitCh.ClickedCh:
+				a.Shutdown()
+				continue
+			}
+		}
+	}()
+
+}
+
+func TrayExit() {
+	log.Println("Tray exit.")
+}
+
+func (a *App) Notify(title string, text string) {
+	beeep.Notify(title, text, "")
+}
 func (a *App) GetFoundBaseStations() map[string]JsonBaseStations {
 
 	var result = make(map[string]JsonBaseStations)
 	for _, v := range baseStationsConnected.Items() {
+
+		if v == nil {
+			continue
+		}
+
 		bs := *v
 		result[bs.GetName()] = JsonBaseStations{
 			Name:        bs.GetName(),
@@ -67,8 +118,8 @@ func (a *App) GetFoundBaseStations() map[string]JsonBaseStations {
 	return result
 }
 
-func (a *App) GetConfiguration() Configuration {
-	return config
+func (a *App) GetConfiguration() *Configuration {
+	return a.config
 }
 
 func (a *App) GetVersion() string {
@@ -83,12 +134,20 @@ func (a *App) IsUpdatingSupported() bool {
 	return IsUpdatingSupported()
 }
 
-func (a *App) ToggleSteamVRManagement() Configuration {
-	config.IsSteamVRManaged = !config.IsSteamVRManaged
+func (a *App) ToggleSteamVRManagement() *Configuration {
+	a.config.IsSteamVRManaged = !a.config.IsSteamVRManaged
 
-	config.Save()
+	a.config.Save()
 
-	return config
+	return a.config
+}
+
+func (a *App) ToggleTray() Configuration {
+	a.config.AllowTray = !a.config.AllowTray
+
+	a.config.Save()
+
+	return *a.config
 }
 
 func (a *App) InitBluetooth() bool {
@@ -101,15 +160,15 @@ func (a *App) InitBluetooth() bool {
 		return false
 	}
 
-	go adapter.Scan(func(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
-		go ScanCallback(a, sr)
+	go adapter.Scan(func(adapter *bluetooth.Adapter, sr bluetooth.ScanResult) {
+		go ScanCallback(a, adapter, sr)
 	})
 
 	a.bluetoothInitFinished = true
 	return true
 }
 
-func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
+func ScanCallback(app *App, a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 
 	if !strings.HasPrefix(sr.LocalName(), "LHB-") {
 		return
@@ -121,10 +180,13 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 
 	log.Println("Possible V2 lighthouse found, trying to connect and discover it")
 
+	baseStationsConnected.Set(sr.LocalName(), nil)
 	conn, err := a.Connect(sr.Address, bluetooth.ConnectionParams{})
 
 	if err != nil {
 		log.Printf("Failed to connect to bluetooth device: %s\n", sr.LocalName())
+		baseStationsConnected.Remove(sr.LocalName())
+
 		return
 	}
 
@@ -133,7 +195,7 @@ func ScanCallback(a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 	baseStationsConnected.Set(sr.LocalName(), &bs)
 	defer conn.Disconnect()
 
-	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
+	if app.config.IsSteamVRManaged && runtime.GOOS == "windows" {
 
 		running, err := isProcRunning("vrserver")
 
@@ -213,6 +275,7 @@ func (a *App) Shutdown() {
 		(*bs).Disconnect()
 	}
 
+	systray.Quit()
 	os.Exit(0)
 }
 
@@ -250,7 +313,7 @@ func (a *App) SleepAllBaseStations() {
 	for _, c := range baseStationsConnected.Items() {
 		bs := *c
 
-		if bs.GetPowerState() != BS_POWERSTATE_AWAKE {
+		if bs.GetPowerState() != BS_POWERSTATE_AWAKE && bs.GetPowerState() != BS_POWERSTATE_AWAKE_2 {
 			continue
 		}
 
