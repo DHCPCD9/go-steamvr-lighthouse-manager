@@ -149,6 +149,10 @@ func (lv *LighthouseV2) readChannel() int {
 }
 
 func (lv *LighthouseV2) GetChannel() int {
+
+	if lv.CachedChannel == -1 {
+		return lv.readChannel()
+	}
 	return lv.CachedChannel
 }
 
@@ -195,6 +199,10 @@ func (lv *LighthouseV2) readPowerState() int {
 }
 
 func (lv *LighthouseV2) GetPowerState() int {
+
+	if lv.CachedPowerState == -1 {
+		return lv.readPowerState()
+	}
 	return lv.CachedPowerState
 }
 
