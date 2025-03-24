@@ -14,6 +14,9 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed build/windows/icon.ico
+var icon []byte
+
 func main() {
 
 	f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)

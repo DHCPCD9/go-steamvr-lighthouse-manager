@@ -19,6 +19,7 @@ var vrappconfig string
 type Configuration struct {
 	IsSteamVRManaged   bool `json:"is_steamvr_managed"`
 	IsSteamVRInstalled bool `json:"is_steamvr_installed"`
+	AllowTray          bool `json:"allow_tray"`
 }
 
 type AppConfig struct {
@@ -30,9 +31,9 @@ type VRAppConfig struct {
 	LastLaunchTime string `json:"last_launch_time"`
 }
 
-func GetConfiguration() Configuration {
+func GetConfiguration() *Configuration {
 	appdataFolder, err := os.UserConfigDir()
-	config := Configuration{IsSteamVRManaged: true}
+	config := Configuration{IsSteamVRManaged: true, AllowTray: true}
 
 	if err != nil {
 		panic("Failed to find user config dir.")
@@ -49,7 +50,8 @@ func GetConfiguration() Configuration {
 	//Loading config
 	config.Load()
 
-	return config
+	config.IsSteamVRInstalled = GetSteamVRInstalled()
+	return &config
 }
 
 func (c *Configuration) Load() {
@@ -72,8 +74,11 @@ func (c *Configuration) Load() {
 		return
 	}
 
+	log.Printf("Configuration: %+v\n", config)
+
 	c.IsSteamVRManaged = config.IsSteamVRManaged
 	c.IsSteamVRInstalled = GetSteamVRInstalled()
+	c.AllowTray = config.AllowTray
 	if c.IsSteamVRInstalled {
 		if c.IsSteamVRManaged {
 			AddToStartup()

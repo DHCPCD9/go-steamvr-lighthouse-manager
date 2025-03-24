@@ -24,10 +24,14 @@ export function IsSteamVRConnectivityAvailable():Promise<boolean>;
 
 export function IsUpdatingSupported():Promise<boolean>;
 
+export function Notify(arg1:string,arg2:string):Promise<void>;
+
 export function Shutdown():Promise<void>;
 
 export function SleepAllBaseStations():Promise<void>;
 
 export function ToggleSteamVRManagement():Promise<main.Configuration>;
+
+export function ToggleTray():Promise<main.Configuration>;
 
 export function WakeUpAllBaseStations():Promise<void>;

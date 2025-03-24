@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Checkbox } from '../components/Checkbox'
 import { ContainerTitleBar } from '../components/ContainerTitleBar';
-import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement } from '../../wailsjs/go/main/App';
+import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement, ToggleTray } from '../../wailsjs/go/main/App';
 import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 import { smoothResize } from '../utils/windows';
@@ -9,7 +9,6 @@ import { smoothResize } from '../utils/windows';
 export function SoftwareSettings() {
 
     //TODO: Reduce hooks amount
-    const [managePower, setManagePower] = useState(false);
     const [config, setConfig] = useState();
     const [isUpdatingSupported, setIsUpdatingSupported] = useState(false);
     const [steamVRAvailable, setsteamVRAvailable] = useState(false);
@@ -18,15 +17,16 @@ export function SoftwareSettings() {
     const { t, i18n } = useTranslation();
     const [updateText, setUpdateText] = useState(t("Check")); // I think there is better way to do it, but it works anyways
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    
+
+    const updateConfig = async () => {
+        setConfig(await GetConfiguration());
+    }
 
     useEffect(() => {
         (async () => {
-            await smoothResize(700, 350);
+            await smoothResize(700, 435);
 
-            let config = await GetConfiguration();
-            setConfig(config);
-            setManagePower(config.is_steamvr_managed);
+            setConfig(await GetConfiguration());
             setVersion(await GetVersion());
             setIsUpdatingSupported(await IsUpdatingSupported());
             setsteamVRAvailable(await IsSteamVRConnectivityAvailable());
@@ -36,22 +36,12 @@ export function SoftwareSettings() {
     useEffect(() => {
         (async () => {
             if (dropdownOpen) {
-                return await smoothResize(700, 400)
+                return await smoothResize(700, 475)
             }
 
-            await smoothResize(700, 350);
+            await smoothResize(700, 435);
         })()
     }, [dropdownOpen])
-
-    useEffect(() => {
-        (async () => {
-            if (!config) return;
-            if (managePower == config.is_steamvr_managed) return;
-            let newConfig = await ToggleSteamVRManagement();
-            setConfig(newConfig);
-            setManagePower(newConfig.is_steamvr_managed);
-        })()
-    }, [managePower, config]);
 
     const checkForUpdates = async () => {
 
@@ -73,13 +63,23 @@ export function SoftwareSettings() {
         }, 1500);
     } 
 
+    const toggleAllowTray = async () => {
+        await ToggleTray();
+        await updateConfig();
+    }
+
+    const togglePowerManagement = async () => {
+        await ToggleSteamVRManagement();
+        await updateConfig();
+    }
+
     useEffect(() => {
 
         if (!isUpdatingSupported) {
             return setUpdateText(t("Get new build from Github"));
         }
         setUpdateText(t("Check"));
-    }, [i18n.language, isUpdatingSupported])
+    }, [i18n.language, isUpdatingSupported]);
     
     const languageNames = {
         en: "English",
@@ -115,7 +115,23 @@ export function SoftwareSettings() {
                     </div>
                 </div>
                 <div>
-                    <Checkbox disabled={!steamVRAvailable || !config.is_steamvr_installed} value={managePower} SetValue={setManagePower}/>
+                    <Checkbox disabled={!steamVRAvailable || !config?.is_steamvr_installed} value={config?.is_steamvr_managed} SetValue={togglePowerManagement}/>
+                </div>
+            </div>
+
+            <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] p-[16px] rounded-[6px]'>
+                <div>
+                    <div className='flex flex-col'>
+                        <span className='text-white text-[14px] poppins-regular'>
+                            {t("Allow tray")}
+                        </span>
+                        <span className='text-white text-[12px] opacity-80 poppins-regular'>
+                            {t("Run the application in the tray when SteamVR is active or when the main window is closed.")}
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <Checkbox value={config?.allow_tray??false} SetValue={toggleAllowTray}/>
                 </div>
             </div>
 

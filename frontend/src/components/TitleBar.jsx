@@ -78,6 +78,17 @@ export function TitleBar() {
         await bulkUpdate("sleep");
     }
 
+    const Quit = async () => {
+        let config = await GetConfiguration();
+        console.log(config)
+        if (config.allow_tray) {
+            await window.runtime.Hide()
+            return await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
+        }
+        
+        return await Shutdown();
+    }
+
     return <div className="flex flex-row justify-between pt-[16px] px-[24px] select-none" style={"--wails-draggable:drag"}>
         <div className="flex gap-1 flex-row">
             <div>
@@ -102,7 +113,7 @@ export function TitleBar() {
             <button onClick={(c) => route("/settings", true)}>
                 <TitleBarSettingsIcon width={16} height={16} fill="#888888" className={`hover:fill-[#1D81FF] duration-200`} />
             </button>
-            <button onClick={() => Shutdown()}>
+            <button onClick={() => Quit()}>
                 <CloseIcon  width={12} height={12} fill="#888888" className={`hover:fill-[#1D81FF] duration-200`} />
             </button>
         </div>

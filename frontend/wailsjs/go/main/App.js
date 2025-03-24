@@ -46,6 +46,10 @@ export function IsUpdatingSupported() {
   return window['go']['main']['App']['IsUpdatingSupported']();
 }
 
+export function Notify(arg1, arg2) {
+  return window['go']['main']['App']['Notify'](arg1, arg2);
+}
+
 export function Shutdown() {
   return window['go']['main']['App']['Shutdown']();
 }
@@ -56,6 +60,10 @@ export function SleepAllBaseStations() {
 
 export function ToggleSteamVRManagement() {
   return window['go']['main']['App']['ToggleSteamVRManagement']();
+}
+
+export function ToggleTray() {
+  return window['go']['main']['App']['ToggleTray']();
 }
 
 export function WakeUpAllBaseStations() {
