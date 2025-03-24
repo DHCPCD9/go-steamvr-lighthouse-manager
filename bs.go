@@ -12,6 +12,7 @@ var (
 	BS_POWERSTATE_SLEEP    = 0
 	BS_POWERSTATE_STAND_BY = 2
 	BS_POWERSTATE_AWAKE    = 9
+	BS_POWERSTATE_AWAKE_2  = 11 // Some weird things is happening here
 )
 
 type BaseStation interface {
