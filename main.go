@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 	"os"
+	"path"
 
 	"github.com/wailsapp/wails/v2/pkg/application"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -15,7 +16,7 @@ var assets embed.FS
 
 func main() {
 
-	f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
