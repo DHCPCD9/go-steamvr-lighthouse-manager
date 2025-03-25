@@ -61,7 +61,10 @@ func (a *App) startup(ctx context.Context) {
 	go func() {
 		for {
 			<-WAKE_UP_CHANNEL
-			wruntime.WindowShow(a.ctx)
+
+			if running, _ := isProcRunning("vrserver"); !running && a.config.IsSteamVRManaged {
+				wruntime.WindowShow(a.ctx)
+			}
 		}
 	}()
 
