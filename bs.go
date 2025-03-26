@@ -15,6 +15,14 @@ var (
 	BS_POWERSTATE_AWAKE_2  = 11 // Some weird things is happening here
 )
 
+var LIGHTHOUSE_SERVICE_UUID = "00001523-1212-EFDE-1523-785FEABCD124"
+
+var (
+	LIGHTHOUSE_CHARACTERISTIC_MODE      = "00001524-1212-EFDE-1523-785FEABCD124"
+	LIGHTHOUSE_CHARACTERISTIC_IDENTITFY = "00008421-1212-EFDE-1523-785FEABCD124"
+	LIGHTHOUSE_CHARACTERISTIC_POWER     = "00001525-1212-EFDE-1523-785FEABCD124"
+)
+
 type BaseStation interface {
 	ScanCharacteristics() bool
 	GetChannel() int
@@ -52,7 +60,7 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 	for i := range services {
 		service := &services[i]
 		uuid := strings.ToUpper(service.UUID().String())
-		if uuid == "00001523-1212-EFDE-1523-785FEABCD124" {
+		if uuid == LIGHTHOUSE_SERVICE_UUID {
 			log.Printf("Found lighthouse  service on base station %s\n", name)
 			foundService = service
 			break
@@ -108,11 +116,11 @@ func (lv *LighthouseV2) ScanCharacteristics() bool {
 		uuid := char.UUID().String()
 
 		switch strings.ToUpper(uuid) {
-		case "00001524-1212-EFDE-1523-785FEABCD124":
+		case LIGHTHOUSE_CHARACTERISTIC_MODE:
 			lv.modeCharacteristic = char
-		case "00008421-1212-EFDE-1523-785FEABCD124":
+		case LIGHTHOUSE_CHARACTERISTIC_IDENTITFY:
 			lv.identifyCharacteristic = char
-		case "00001525-1212-EFDE-1523-785FEABCD124":
+		case LIGHTHOUSE_CHARACTERISTIC_POWER:
 			lv.powerStateCharacteristic = char
 		}
 	}
