@@ -5,6 +5,7 @@ import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailab
 import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 import { smoothResize } from '../utils/windows';
+import { motion } from 'framer-motion'
 
 export function SoftwareSettings() {
 
@@ -109,9 +110,9 @@ export function SoftwareSettings() {
                         <span className='text-white text-[14px] poppins-regular'>
                             {t("Manage Base Station Power")}
                         </span>
-                        <span className='text-white text-[12px] opacity-80 poppins-regular'>
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-white text-[12px] opacity-80 poppins-regular'>
                             {steamVRAvailable && config.is_steamvr_installed ? t("Manage Power based on SteamVR launched or not") : t("SteamVR not found or this platform is not supported")}
-                        </span>
+                        </motion.span>
                     </div>
                 </div>
                 <div>
@@ -141,15 +142,15 @@ export function SoftwareSettings() {
                         <span className='text-white text-[14px] poppins-regular'>
                             {t("Check for updates")}
                         </span>
-                        <span className='text-white text-[12px] opacity-80 poppins-regular'>
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-white text-[12px] opacity-80 poppins-regular'>
                             {isUpdatingSupported ? t("Check for a new version") : t("Updating for portable builds or this platform is not supported.")}
-                        </span>
+                        </motion.span>
                     </div>
                 </div>
                 <div>
-                    <button disabled={updateLocked} className='text-[12px] py-[8px] px-[32px] disabled:bg-[#2A63AB] disabled:hover:bg-[#2A63AB] disabled:cursor-not-allowed cursor-pointer bg-[#1D81FF] rounded-[6px] duration-100 hover:bg-[#66AAFF] cursor-pointer' onClick={checkForUpdates}>
+                    <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} disabled={updateLocked} className='text-[12px] py-[8px] px-[32px] disabled:bg-[#2A63AB] disabled:hover:bg-[#2A63AB] disabled:cursor-not-allowed cursor-pointer bg-[#1D81FF] rounded-[6px] duration-100 hover:bg-[#66AAFF] cursor-pointer' onClick={checkForUpdates}>
                         {updateText}
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         </div>
