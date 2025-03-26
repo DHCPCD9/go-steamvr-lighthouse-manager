@@ -75,7 +75,7 @@ export function BaseStationsList() {
                         </div>
                     </motion.div> : null}
 
-                    {baseStations.length && baseStations.length < 4 && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: ((baseStations.length + 1) * 0.150)}} className="flex justify-center text-white/50 poppins-reglar">
+                    {baseStations.length > 0 && baseStations.length < 4 && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: ((baseStations.length + 1) * 0.150)}} className="flex justify-center text-white/50 poppins-reglar">
                         <Trans i18nKey={"Found base stations"}  count={baseStations.length}>
                             Found {{ baseStations: baseStations.length }} Lighthouse(s)
                         </Trans>
