@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"io"
 	"log"
 	"net/http"
@@ -17,6 +18,11 @@ import (
 	"github.com/google/go-github/v69/github"
 	"golang.org/x/sys/windows/registry"
 )
+
+//go:embed VERSION_FLAGS
+var VERSION_FLAGS string
+
+var FLAGS_NO_UPDATE string = "NO_UPDATES"
 
 func ForceUpdate() {
 	client := github.NewClient(nil)
@@ -55,8 +61,9 @@ func ForceUpdate() {
 }
 
 func IsUpdatingSupported() bool {
+
 	//probing regedit
 	_, err := registry.OpenKey(registry.LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Alumi Inc.Base Station Manager", registry.QUERY_VALUE)
 
-	return err == nil
+	return err == nil && !strings.Contains(FLAGS_NO_UPDATE, VERSION_FLAGS)
 }
