@@ -10,7 +10,7 @@ export function ForceUpdate():Promise<void>;
 
 export function GetConfiguration():Promise<main.Configuration>;
 
-export function GetFoundBaseStations():Promise<Record<string, main.JsonBaseStations>>;
+export function GetFoundBaseStations():Promise<Record<string, main.JsonBaseStation>>;
 
 export function GetVersion():Promise<string>;
 
@@ -33,5 +33,7 @@ export function SleepAllBaseStations():Promise<void>;
 export function ToggleSteamVRManagement():Promise<main.Configuration>;
 
 export function ToggleTray():Promise<main.Configuration>;
+
+export function UpdateConfigValue(arg1:string,arg2:any):Promise<void>;
 
 export function WakeUpAllBaseStations():Promise<void>;

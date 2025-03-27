@@ -20,14 +20,16 @@ import (
 
 var adapter = bluetooth.DefaultAdapter
 var WAKE_UP_CHANNEL = make(chan interface{})
-var baseStationsConnected = cmap.New[*BaseStation]()
+var knownBaseStations = cmap.New[*BaseStation]()
 
-type JsonBaseStations struct {
+type JsonBaseStation struct {
 	Name        string    `json:"name"`
 	Channel     int       `json:"channel"`
 	PowerState  int       `json:"power_state"`
 	LastUpdated time.Time `json:"last_updated"`
 	Version     int       `json:"version"`
+	Status      string    `json:"status"`
+	Managed     bool      `json:"managed"`
 }
 
 //go:embed VERSION
@@ -46,6 +48,9 @@ func NewApp() *App {
 	}
 }
 
+func (a *App) UpdateConfigValue(name string, value interface{}) {
+	a.config.UpdateValue(name, value)
+}
 func (a *App) startup(ctx context.Context) {
 
 	f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
@@ -70,6 +75,8 @@ func (a *App) startup(ctx context.Context) {
 
 	a.config = GetConfiguration()
 
+	go a.preloadBaseStations()
+
 	if a.config.IsSteamVRManaged && runtime.GOOS == "windows" {
 		if running, _ := isProcRunning("vrserver"); running {
 			wruntime.WindowHide(a.ctx)
@@ -78,6 +85,16 @@ func (a *App) startup(ctx context.Context) {
 
 	go systray.Run(a.trayReady, TrayExit)
 
+	//Preloading base stations
+}
+
+func (a *App) preloadBaseStations() {
+
+	for name, baseStation := range a.config.KnownBaseStations {
+		log.Printf("Preload base station: %s %+v\n", name, baseStation)
+		preloadedBaseStation := PreloadBaseStation(*baseStation)
+		knownBaseStations.Set(name, &preloadedBaseStation)
+	}
 }
 
 // I REALLY SHOULD NOT DO THAT
@@ -121,22 +138,34 @@ func TrayExit() {
 func (a *App) Notify(title string, text string) {
 	beeep.Notify(title, text, "")
 }
-func (a *App) GetFoundBaseStations() map[string]JsonBaseStations {
 
-	var result = make(map[string]JsonBaseStations)
-	for _, v := range baseStationsConnected.Items() {
+func (a *App) GetFoundBaseStations() map[string]JsonBaseStation {
+	var result = make(map[string]JsonBaseStation)
+	for name, v := range knownBaseStations.Items() {
 
 		if v == nil {
+			log.Printf("Base station %s in nil\n", name)
 			continue
 		}
 
 		bs := *v
-		result[bs.GetName()] = JsonBaseStations{
+
+		configBaseStation := a.config.KnownBaseStations[name]
+
+		managed := false
+
+		if configBaseStation != nil {
+			managed = configBaseStation.Managed
+		}
+
+		result[bs.GetId()] = JsonBaseStation{
 			Name:        bs.GetName(),
 			Channel:     bs.GetChannel(),
 			PowerState:  bs.GetPowerState(),
 			LastUpdated: time.Now(),
 			Version:     bs.GetVersion(),
+			Status:      bs.GetStatus(),
+			Managed:     managed,
 		}
 
 	}
@@ -200,44 +229,56 @@ func ScanCallback(app *App, a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 		return
 	}
 
-	if baseStationsConnected.Has(sr.LocalName()) {
-		return
-	}
+	_, found := knownBaseStations.Get(sr.LocalName())
 
-	log.Println("Possible V2 lighthouse found, trying to connect and discover it")
+	// var baseStation BaseStation
+	if !found {
+		knownBaseStations.Set(sr.LocalName(), nil)
+		//Base station not found, we need to store it in out config then
 
-	baseStationsConnected.Set(sr.LocalName(), nil)
-	conn, err := a.Connect(sr.Address, bluetooth.ConnectionParams{})
-
-	if err != nil {
-		log.Printf("Failed to connect to bluetooth device: %s\n", sr.LocalName())
-		baseStationsConnected.Remove(sr.LocalName())
-
-		return
-	}
-
-	bs := InitBaseStation(&conn, a, sr.LocalName())
-
-	baseStationsConnected.Set(sr.LocalName(), &bs)
-	defer conn.Disconnect()
-
-	if app.config.IsSteamVRManaged && runtime.GOOS == "windows" {
-
-		running, err := isProcRunning("vrserver")
+		conn, err := a.Connect(sr.Address, bluetooth.ConnectionParams{})
 
 		if err != nil {
-			//whoops
+			log.Printf("Failed to connect to bluetooth device: %s\n", sr.LocalName())
+
 			return
 		}
-		//Powering on base station
-		if running {
-			bs.SetPowerState(0x01)
+
+		bs, ok := InitBaseStation(&conn, a, sr.LocalName())
+
+		if !ok {
+			knownBaseStations.Remove(sr.LocalName())
+			return
 		}
+		defer conn.Disconnect()
+
+		knownBaseStations.Set(sr.LocalName(), &bs)
+
+		//Saving base station
+		app.config.SaveBaseStation(&bs)
+
+		log.Println("New base station discovered and saved")
+
+		if app.config.IsSteamVRManaged && runtime.GOOS == "windows" {
+
+			running, err := isProcRunning("vrserver")
+
+			if err != nil {
+				//whoops
+				return
+			}
+			//Powering on base station
+			if running {
+				bs.SetPowerState(0x01)
+			}
+		}
+
+		return
 	}
 }
 
 func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string) string {
-	baseStation, found := baseStationsConnected.Get(baseStationMac)
+	baseStation, found := knownBaseStations.Get(baseStationMac)
 
 	if !found {
 		return "Unknown base station"
@@ -259,13 +300,13 @@ func (a *App) ChangeBaseStationPowerStatus(baseStationMac string, status string)
 }
 
 func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) string {
-	baseStation, found := baseStationsConnected.Get(baseStationMac)
+	baseStation, found := knownBaseStations.Get(baseStationMac)
 
 	if !found {
 		return "Unknown base station"
 	}
 
-	for _, v := range baseStationsConnected.Items() {
+	for _, v := range knownBaseStations.Items() {
 		bs := *v
 		if bs.GetChannel() == channel {
 			return "error: This channel conflicts with another base station"
@@ -284,7 +325,7 @@ func (a *App) ChangeBaseStationChannel(baseStationMac string, channel int) strin
 }
 
 func (a *App) IdentitifyBaseStation(baseStationMac string) string {
-	baseStation, found := baseStationsConnected.Get(baseStationMac)
+	baseStation, found := knownBaseStations.Get(baseStationMac)
 
 	if !found {
 		return "Unknown base station"
@@ -297,8 +338,11 @@ func (a *App) IdentitifyBaseStation(baseStationMac string) string {
 }
 
 func (a *App) Shutdown() {
-	for _, bs := range baseStationsConnected.Items() {
-		(*bs).Disconnect()
+	for _, bs := range knownBaseStations.Items() {
+
+		if bs != nil {
+			(*bs).Disconnect()
+		}
 	}
 
 	systray.Quit()
@@ -325,7 +369,7 @@ func (a *App) IsSteamVRConnected() bool {
 }
 
 func (a *App) WakeUpAllBaseStations() {
-	for _, c := range baseStationsConnected.Items() {
+	for _, c := range knownBaseStations.Items() {
 
 		bs := *c
 		if bs.GetPowerState() == BS_POWERSTATE_AWAKE {
@@ -336,7 +380,7 @@ func (a *App) WakeUpAllBaseStations() {
 }
 
 func (a *App) SleepAllBaseStations() {
-	for _, c := range baseStationsConnected.Items() {
+	for _, c := range knownBaseStations.Items() {
 		bs := *c
 
 		if bs.GetPowerState() != BS_POWERSTATE_AWAKE && bs.GetPowerState() != BS_POWERSTATE_AWAKE_2 {

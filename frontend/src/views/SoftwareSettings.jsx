@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Checkbox } from '../components/Checkbox'
 import { ContainerTitleBar } from '../components/ContainerTitleBar';
-import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement, ToggleTray } from '../../wailsjs/go/main/App';
+import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement, ToggleTray, UpdateConfigValue } from '../../wailsjs/go/main/App';
 import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 import { smoothResize } from '../utils/windows';
@@ -65,12 +65,12 @@ export function SoftwareSettings() {
     } 
 
     const toggleAllowTray = async () => {
-        await ToggleTray();
+        await UpdateConfigValue("allow_tray", !config.is_steamvr_managed);
         await updateConfig();
     }
 
     const togglePowerManagement = async () => {
-        await ToggleSteamVRManagement();
+        await UpdateConfigValue("is_steamvr_managed", !config.is_steamvr_managed);
         await updateConfig();
     }
 

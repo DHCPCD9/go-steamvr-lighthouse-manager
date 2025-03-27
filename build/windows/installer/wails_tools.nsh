@@ -5,7 +5,7 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "bs-manager-web"
+    !define INFO_PROJECTNAME "base-station-manager"
 !endif
 !ifndef INFO_COMPANYNAME
     !define INFO_COMPANYNAME "Alumi Inc."

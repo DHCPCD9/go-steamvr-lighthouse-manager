@@ -2,7 +2,7 @@ import { BaseStationIcon } from "../assets/basestation";
 import { motion, AnimatePresence } from "framer-motion"
 
 import VisibilityIcon from "../assets/icons/VisibilityIcon";
-import { useState } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wailsjs/go/main/App";
 import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
@@ -44,6 +44,15 @@ export function BaseStation({ station, refreshBaseStations }) {
     }
 
     const { t } = useTranslation();
+
+    const baseStationStatus = useMemo(() => {
+        
+        if (station.status == "error") return "error";
+
+        if (station.status != "ready") return "preloaded"
+
+        return isAwoke ? "awoke" : "sleep"
+    }, [station.power_state, station.status])
     
 
     return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer">
@@ -52,7 +61,7 @@ export function BaseStation({ station, refreshBaseStations }) {
             <div className="flex flex-col gap-[2px] text-[14px]">
                 <span className="flex flex-row gap-[6px] items-center">
                     <span>{station.name} </span>
-                   <StatusCircleIcon class={`data-[awoken="false"]:fill-red-500 fill-green-500 duration-300`}  data-awoken={isAwoke} />
+                   <StatusCircleIcon class={`data-[status="sleep"]:fill-red-500 data-[status="preloaded"]:fill-blue-500 data-[status="awoke"]:fill-green-500 duration-300`}  data-status={baseStationStatus} />
 
                 </span>
                 <span className="text-[#C6C6C6]">

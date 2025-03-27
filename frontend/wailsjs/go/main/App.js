@@ -66,6 +66,10 @@ export function ToggleTray() {
   return window['go']['main']['App']['ToggleTray']();
 }
 
+export function UpdateConfigValue(arg1, arg2) {
+  return window['go']['main']['App']['UpdateConfigValue'](arg1, arg2);
+}
+
 export function WakeUpAllBaseStations() {
   return window['go']['main']['App']['WakeUpAllBaseStations']();
 }
