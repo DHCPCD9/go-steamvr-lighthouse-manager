@@ -1,5 +1,5 @@
 import { SettingsIcon, XIcon } from "lucide-preact";
-import { ChangeBaseStationPowerStatus, GetConfiguration, GetFoundBaseStations, IsSteamVRConnected, IsSteamVRConnectivityAvailable, Shutdown, SleepAllBaseStations, WakeUpAllBaseStations } from "../../wailsjs/go/main/App";
+import { ChangeBaseStationPowerStatus, GetConfiguration, GetFoundBaseStations, IsSteamVRConnected, IsSteamVRConnectivityAvailable, Shutdown, SleepAllBaseStations, UpdateConfigValue, WakeUpAllBaseStations } from "../../wailsjs/go/main/App";
 import { useEffect, useState } from "preact/hooks";
 import { AnimatePresence, motion } from 'framer-motion';
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
@@ -14,52 +14,62 @@ export function TitleBar() {
 
     const [steamVRAvailable, setSteamVRAvailable] = useState(false);
     const [steamVRLaunched, setSteamVRLaunched] = useState(false);
-    const [previousState, setPreviousState] = useState(false);
-    const [steamVRManagementEnabled, setSteamVRManagementEnabled] = useState(true);
+    const [previousSteamVRState, setPreviousState] = useState(false);
+    const [config, setConfig] = useState();
     const { t } = useTranslation();
 
     const bulkUpdate = async (state) => {
         
-        for(const baseSation of Object.values(await GetFoundBaseStations())) {
-            await ChangeBaseStationPowerStatus(baseSation.name, state);
+        for(const baseStation of Object.values(await GetFoundBaseStations())) {
+
+            if (baseStation.managed) {
+                await ChangeBaseStationPowerStatus(baseStation.name, state);
+            }
         }
     }
 
     useEffect(() => {
         (async () => {
             setSteamVRAvailable(await IsSteamVRConnectivityAvailable());
-            setSteamVRManagementEnabled(GetConfiguration().then(c => c.is_steamvr_managed));
+            setConfig(await GetConfiguration());
         })()
     }, []);
 
+    let isSteamVRRunning = async () => {
+        let iconfig = await GetConfiguration();
+        if (!iconfig) return;
+        if (!iconfig.is_steamvr_managed) return;
+        let isLaunched = await IsSteamVRConnected();
+        setSteamVRLaunched(isLaunched);
+    }
     useEffect(() => {
 
         let interval;
 
-        if (steamVRAvailable) {
-            interval = setInterval(async () => {
-                setSteamVRManagementEnabled(await GetConfiguration().then(c => c.is_steamvr_managed));
-                if (!steamVRManagementEnabled) return;
-                let isLaunched = await IsSteamVRConnected();
-                setSteamVRLaunched(isLaunched);
-
-            }, 3000);
-        }
+        (async () => {
+            if (steamVRAvailable) {
+                await isSteamVRRunning();
+                interval = setInterval(isSteamVRRunning, 3000);
+            }
+        })()
+        
 
         return () => clearInterval(interval)
     }, [steamVRAvailable])
 
     useEffect(() => {
         (async () => {
-            if (!steamVRManagementEnabled) return;
-            if (steamVRLaunched && !previousState) {
-                 setPreviousState(true);
-                 return await bulkUpdate("awake");
+            if (!config) return;
+            if (!config.is_steamvr_managed) return;
+
+            if (steamVRLaunched && !previousSteamVRState) {
+                await bulkUpdate("awake");
+                setPreviousState(steamVRLaunched);
+                return;
             }
 
-            setPreviousState(false);
             await bulkUpdate("sleep");
-
+            setPreviousState(steamVRLaunched);
         })()
     }, [steamVRLaunched]);
 
@@ -80,10 +90,16 @@ export function TitleBar() {
 
     const Quit = async () => {
         let config = await GetConfiguration();
-        console.log(config)
         if (config.allow_tray) {
             await window.runtime.Hide()
-            return await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
+            console.log(config)
+
+            if (!config.tray_notified) {
+                await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
+                await UpdateConfigValue("tray_notified", true)
+            }
+
+            return
         }
         
         return await Shutdown();
@@ -98,9 +114,12 @@ export function TitleBar() {
                 SteamVR Lighthouse Manager
             </div>
         </div>
-        <div className="flex flex-row gap-1 items-center">
+        <div>
+
+        </div>
+        <div className="flex flex-row gap-1 items-center" style={"--wails-draggable:no-drag"}>
             <AnimatePresence>
-                {steamVRAvailable && steamVRManagementEnabled && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
+                {steamVRAvailable && config && config.is_steamvr_managed && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
                     <span className="text-[##C6C6C6]">SteamVR</span>
                     <span className={`data-[active="true"]:text-[#7AFF73] text-[#FF7373] duration-200`} data-active={steamVRLaunched}>{steamVRLaunched ? t("Active") : t("Inactive")} </span>
                 </div></motion.div>}

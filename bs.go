@@ -33,6 +33,9 @@ type BaseStation interface {
 	GetName() string
 	GetVersion() int
 	Disconnect()
+	GetStatus() string
+	GetId() string
+	GetMAC() string
 }
 
 type LighthouseV2 struct {
@@ -43,17 +46,88 @@ type LighthouseV2 struct {
 	adapter                  *bluetooth.Adapter
 	service                  *bluetooth.DeviceService
 	Name                     string
+	Id                       string
 	CachedPowerState         int
 	CachedChannel            int
 	CacheTimer               *time.Ticker
 	ValidLighthouse          bool
+	Status                   string
 }
 
-func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, name string) BaseStation {
+func PreloadBaseStation(config BaseStationConfiguration) BaseStation {
+	lh := &LighthouseV2{
+		Name:             config.Nickname,
+		Id:               config.Id,
+		Status:           "preloaded",
+		CachedPowerState: -1,
+		CachedChannel:    config.LastChannel,
+		ValidLighthouse:  false,
+		CacheTimer:       time.NewTicker(time.Second * 10),
+	}
+
+	go connectToPreloadedBaseStation(lh, config)
+
+	return lh
+}
+
+func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration) {
+
+	parsedMac, err := bluetooth.ParseMAC(config.MacAddress)
+
+	if err != nil {
+		log.Printf("Failed to parse mac: %s for lighthouse %s (%+v)\n", config.MacAddress, config.Id, err)
+		return
+	}
+
+	conn, err := adapter.Connect(bluetooth.Address{
+		MACAddress: bluetooth.MACAddress{
+			MAC: parsedMac,
+		},
+	}, bluetooth.ConnectionParams{})
+
+	if err != nil {
+		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
+		return
+	}
+
+	bs.adapter = adapter
+	bs.p = &conn
+
+	log.Printf("Connected to base station: %s\n", config.Id)
+
+	services, err := conn.DiscoverServices(nil)
+	if err != nil {
+		conn.Disconnect()
+		panic("Failed to discover services: " + err.Error())
+	}
+
+	var foundService *bluetooth.DeviceService
+	for i := range services {
+		service := &services[i]
+		uuid := strings.ToUpper(service.UUID().String())
+		if uuid == LIGHTHOUSE_SERVICE_UUID {
+			log.Printf("Found lighthouse  service on base station %s\n", config.Id)
+			foundService = service
+			break
+		}
+	}
+
+	bs.service = foundService
+	bs.ScanCharacteristics()
+
+	bs.CachedChannel = bs.readChannel()
+	bs.CachedPowerState = bs.readPowerState()
+
+	go bs.StartCaching()
+}
+
+func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, name string) (BaseStation, bool) {
 	services, err := connection.DiscoverServices(nil)
 	if err != nil {
 		connection.Disconnect()
-		panic("Failed to discover services: " + err.Error())
+		log.Println("Failed to discover services: " + err.Error())
+
+		return &LighthouseV2{}, false
 	}
 
 	var foundService *bluetooth.DeviceService
@@ -78,6 +152,8 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 		CachedPowerState:         -1,
 		CachedChannel:            -1,
 		CacheTimer:               time.NewTicker(time.Second * 10),
+		Id:                       name,
+		Status:                   "scanning",
 	}
 
 	bs.ValidLighthouse = bs.ScanCharacteristics()
@@ -86,13 +162,14 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 	bs.CachedChannel = bs.readChannel()
 
 	go bs.StartCaching()
-	return bs
+	return bs, true
 }
 
 func (lv *LighthouseV2) StartCaching() {
 
 	for {
 		<-lv.CacheTimer.C
+
 		lv.CachedPowerState = lv.readPowerState()
 		lv.CachedChannel = lv.readChannel()
 
@@ -132,6 +209,11 @@ func (lv *LighthouseV2) ScanCharacteristics() bool {
 		lv.identifyCharacteristic != nil)
 
 	lv.ValidLighthouse = lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
+
+	if lv.ValidLighthouse {
+		lv.Status = "ready"
+	}
+
 	return lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
 }
 
@@ -254,9 +336,29 @@ func (lv *LighthouseV2) GetName() string {
 }
 
 func (lv *LighthouseV2) Disconnect() {
+
+	if lv.p == nil {
+		return
+	}
 	lv.p.Disconnect()
 }
 
 func (lv *LighthouseV2) GetVersion() int {
 	return 2 // stands for 2.0
+}
+
+func (lv *LighthouseV2) GetId() string {
+	return lv.Id
+}
+
+func (lv *LighthouseV2) GetMAC() string {
+	if lv.p != nil {
+		return lv.p.Address.MAC.String()
+	}
+
+	return ""
+}
+
+func (lv *LighthouseV2) GetStatus() string {
+	return lv.Status
 }

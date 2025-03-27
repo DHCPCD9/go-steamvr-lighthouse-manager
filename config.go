@@ -6,8 +6,12 @@ import (
 	"log"
 	"os"
 	"path"
+	"reflect"
 	"slices"
 	"strings"
+	"time"
+
+	"github.com/tiendc/go-deepcopy"
 )
 
 //go:embed steamvr/manifest.vrmanifest
@@ -16,10 +20,22 @@ var manifest string
 //go:embed steamvr/com.github.dhcpcd9.base-station-manager.vrappconfig
 var vrappconfig string
 
+type BaseStationConfiguration struct {
+	MacAddress  string    `json:"mac_address"`
+	LastSeen    time.Time `json:"last_seen"`
+	LastChannel int       `json:"channel"`
+	Nickname    string    `json:"nickname"`
+	Id          string    `json:"id"`
+	Managed     bool      `json:"managed"`
+	GroupNames  []string  `json:"groups"`
+}
+
 type Configuration struct {
-	IsSteamVRManaged   bool `json:"is_steamvr_managed"`
-	IsSteamVRInstalled bool `json:"is_steamvr_installed"`
-	AllowTray          bool `json:"allow_tray"`
+	IsSteamVRManaged   bool                                 `json:"is_steamvr_managed"`
+	IsSteamVRInstalled bool                                 `json:"is_steamvr_installed"`
+	AllowTray          bool                                 `json:"allow_tray"`
+	TrayNotified       bool                                 `json:"tray_notified"`
+	KnownBaseStations  map[string]*BaseStationConfiguration `json:"known_base_stations"`
 }
 
 type AppConfig struct {
@@ -33,7 +49,7 @@ type VRAppConfig struct {
 
 func GetConfiguration() *Configuration {
 	appdataFolder, err := os.UserConfigDir()
-	config := Configuration{IsSteamVRManaged: true, AllowTray: true}
+	config := Configuration{IsSteamVRManaged: true, AllowTray: true, KnownBaseStations: make(map[string]*BaseStationConfiguration), TrayNotified: false}
 
 	if err != nil {
 		panic("Failed to find user config dir.")
@@ -74,11 +90,16 @@ func (c *Configuration) Load() {
 		return
 	}
 
-	log.Printf("Configuration: %+v\n", config)
+	deepcopy.Copy(c, config)
 
-	c.IsSteamVRManaged = config.IsSteamVRManaged
-	c.IsSteamVRInstalled = GetSteamVRInstalled()
-	c.AllowTray = config.AllowTray
+	//I don't know why deepcopy didn't copied it, but okay
+
+	c.KnownBaseStations = config.KnownBaseStations
+
+	if c.KnownBaseStations == nil {
+		c.KnownBaseStations = make(map[string]*BaseStationConfiguration) // Works in case if user updated from old version
+	}
+
 	if c.IsSteamVRInstalled {
 		if c.IsSteamVRManaged {
 			AddToStartup()
@@ -86,6 +107,51 @@ func (c *Configuration) Load() {
 			RemoveFromStartup()
 		}
 	}
+}
+
+func (c *Configuration) UpdateValue(jsonName string, value interface{}) {
+	structValue := reflect.ValueOf(c).Elem()
+	structType := structValue.Type()
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		tag := field.Tag.Get("json")
+		tagParts := strings.Split(tag, ",")
+		jsonTagName := tagParts[0]
+
+		if jsonTagName == jsonName {
+			fieldValue := structValue.Field(i)
+			log.Println("Found field:", field.Name, "value:", fieldValue.Interface())
+
+			if fieldValue.CanSet() {
+				val := reflect.ValueOf(value)
+				if val.Type().ConvertibleTo(fieldValue.Type()) {
+					fieldValue.Set(val.Convert(fieldValue.Type()))
+					c.Save()
+				} else {
+					log.Printf("Type mismatch: %s is %s, not %s\n", jsonName, val.Type(), fieldValue.Type())
+				}
+			}
+			return
+		}
+	}
+	log.Printf("JSON field name %s not found in struct\n", jsonName)
+}
+
+func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
+	bs := *baseStation
+
+	c.KnownBaseStations[bs.GetId()] = &BaseStationConfiguration{
+		MacAddress:  bs.GetMAC(),
+		LastSeen:    time.Now(),
+		LastChannel: bs.GetChannel(),
+		Nickname:    bs.GetId(),
+		Id:          bs.GetId(),
+		Managed:     true,
+		GroupNames:  []string{},
+	}
+
+	c.Save()
 }
 
 func (c *Configuration) Save() {
