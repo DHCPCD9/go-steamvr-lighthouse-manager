@@ -1,5 +1,5 @@
 import { SettingsIcon, XIcon } from "lucide-preact";
-import { ChangeBaseStationPowerStatus, GetConfiguration, GetFoundBaseStations, IsSteamVRConnected, IsSteamVRConnectivityAvailable, Shutdown, SleepAllBaseStations, WakeUpAllBaseStations } from "../../wailsjs/go/main/App";
+import { ChangeBaseStationPowerStatus, GetConfiguration, GetFoundBaseStations, IsSteamVRConnected, IsSteamVRConnectivityAvailable, Shutdown, SleepAllBaseStations, UpdateConfigValue, WakeUpAllBaseStations } from "../../wailsjs/go/main/App";
 import { useEffect, useState } from "preact/hooks";
 import { AnimatePresence, motion } from 'framer-motion';
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
@@ -84,7 +84,13 @@ export function TitleBar() {
         let config = await GetConfiguration();
         if (config.allow_tray) {
             await window.runtime.Hide()
-            return await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
+
+            if (!config.tray_notified) {
+                await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
+                await UpdateConfigValue("tray_notified", true)
+            }
+
+            return
         }
         
         return await Shutdown();
