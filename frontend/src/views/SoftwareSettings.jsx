@@ -65,7 +65,7 @@ export function SoftwareSettings() {
     } 
 
     const toggleAllowTray = async () => {
-        await UpdateConfigValue("allow_tray", !config.is_steamvr_managed);
+        await UpdateConfigValue("allow_tray", !config.allow_tray);
         await updateConfig();
     }
 
