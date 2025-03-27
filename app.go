@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"path"
 	"runtime"
 	"strings"
 	"time"
@@ -53,13 +52,13 @@ func (a *App) UpdateConfigValue(name string, value interface{}) {
 }
 func (a *App) startup(ctx context.Context) {
 
-	f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
+	// f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	// if err != nil {
+	// 	log.Fatalf("error opening file: %v", err)
+	// }
+	// defer f.Close()
 
-	log.SetOutput(f)
+	// log.SetOutput(f)
 
 	a.ctx = ctx
 

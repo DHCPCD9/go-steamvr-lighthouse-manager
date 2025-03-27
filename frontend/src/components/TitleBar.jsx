@@ -31,6 +31,7 @@ export function TitleBar() {
     useEffect(() => {
         (async () => {
             setSteamVRAvailable(await IsSteamVRConnectivityAvailable());
+            setConfig(await GetConfiguration());
         })()
     }, []);
 
@@ -40,7 +41,9 @@ export function TitleBar() {
 
         if (steamVRAvailable) {
             interval = setInterval(async () => {
-                setConfig(await GetConfiguration())
+                setConfig(await GetConfiguration());
+
+                if (!config) return;
                 if (!config.is_steamvr_managed) return;
                 let isLaunched = await IsSteamVRConnected();
                 setSteamVRLaunched(isLaunched);
@@ -53,7 +56,9 @@ export function TitleBar() {
 
     useEffect(() => {
         (async () => {
-            if (!steamVRManagementEnabled) return;
+            if (!config) return;
+            if (!config.is_steamvr_managed) return;
+
             if (steamVRLaunched && !previousSteamVRState) {
                 await bulkUpdate("awake");
                 setPreviousState(steamVRLaunched);
@@ -84,6 +89,7 @@ export function TitleBar() {
         let config = await GetConfiguration();
         if (config.allow_tray) {
             await window.runtime.Hide()
+            console.log(config)
 
             if (!config.tray_notified) {
                 await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
@@ -110,7 +116,7 @@ export function TitleBar() {
         </div>
         <div className="flex flex-row gap-1 items-center" style={"--wails-draggable:no-drag"}>
             <AnimatePresence>
-                {steamVRAvailable && config.is_steamvr_managed && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
+                {steamVRAvailable && config && config.is_steamvr_managed && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
                     <span className="text-[##C6C6C6]">SteamVR</span>
                     <span className={`data-[active="true"]:text-[#7AFF73] text-[#FF7373] duration-200`} data-active={steamVRLaunched}>{steamVRLaunched ? t("Active") : t("Inactive")} </span>
                 </div></motion.div>}

@@ -127,6 +127,7 @@ func (c *Configuration) UpdateValue(jsonName string, value interface{}) {
 				val := reflect.ValueOf(value)
 				if val.Type().ConvertibleTo(fieldValue.Type()) {
 					fieldValue.Set(val.Convert(fieldValue.Type()))
+					c.Save()
 				} else {
 					log.Printf("Type mismatch: %s is %s, not %s\n", jsonName, val.Type(), fieldValue.Type())
 				}
@@ -135,9 +136,6 @@ func (c *Configuration) UpdateValue(jsonName string, value interface{}) {
 		}
 	}
 	log.Printf("JSON field name %s not found in struct\n", jsonName)
-
-	//Saving
-	c.Save()
 }
 
 func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
