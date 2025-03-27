@@ -35,21 +35,24 @@ export function TitleBar() {
         })()
     }, []);
 
+    let isSteamVRRunning = async () => {
+        let iconfig = await GetConfiguration();
+        if (!iconfig) return;
+        if (!iconfig.is_steamvr_managed) return;
+        let isLaunched = await IsSteamVRConnected();
+        setSteamVRLaunched(isLaunched);
+    }
     useEffect(() => {
 
         let interval;
 
-        if (steamVRAvailable) {
-            interval = setInterval(async () => {
-                setConfig(await GetConfiguration());
-
-                if (!config) return;
-                if (!config.is_steamvr_managed) return;
-                let isLaunched = await IsSteamVRConnected();
-                setSteamVRLaunched(isLaunched);
-
-            }, 3000);
-        }
+        (async () => {
+            if (steamVRAvailable) {
+                await isSteamVRRunning();
+                interval = setInterval(isSteamVRRunning, 3000);
+            }
+        })()
+        
 
         return () => clearInterval(interval)
     }, [steamVRAvailable])
