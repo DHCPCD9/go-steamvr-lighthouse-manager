@@ -66,12 +66,12 @@ func PreloadBaseStation(config BaseStationConfiguration, wakeUp bool) BaseStatio
 		CacheTimer:       time.NewTicker(time.Second * 10),
 	}
 
-	go connectToPreloadedBaseStation(lh, config, wakeUp)
+	go connectToPreloadedBaseStation(lh, config, wakeUp, 0)
 
 	return lh
 }
 
-func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool) {
+func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool, attemp int) {
 
 	parsedMac, err := bluetooth.ParseMAC(config.MacAddress)
 
@@ -99,7 +99,12 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 	services, err := conn.DiscoverServices(nil)
 	if err != nil {
 		conn.Disconnect()
-		panic("Failed to discover services: " + err.Error())
+		if attemp < 3 {
+			connectToPreloadedBaseStation(bs, config, wakeUp, attemp+1)
+			return
+		}
+
+		return
 	}
 
 	var foundService *bluetooth.DeviceService
