@@ -18,10 +18,11 @@ export function TitleBar() {
     const [config, setConfig] = useState();
     const { t } = useTranslation();
 
-    const bulkUpdate = async (state) => {
+    const bulkUpdate = async (state, flags) => {
         
         for(const baseStation of Object.values(await GetFoundBaseStations())) {
 
+            if (!(baseStation.managed_flags & flags)) continue;
             if (baseStation.managed) {
                 await ChangeBaseStationPowerStatus(baseStation.name, state);
             }
@@ -63,12 +64,12 @@ export function TitleBar() {
             if (!config.is_steamvr_managed) return;
 
             if (steamVRLaunched && !previousSteamVRState) {
-                await bulkUpdate("awake");
+                await bulkUpdate("awake", 2);
                 setPreviousState(steamVRLaunched);
                 return;
             }
 
-            await bulkUpdate("sleep");
+            await bulkUpdate("sleep", 4);
             setPreviousState(steamVRLaunched);
         })()
     }, [steamVRLaunched]);

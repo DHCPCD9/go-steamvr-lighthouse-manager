@@ -14,6 +14,10 @@ export function ForceUpdate() {
   return window['go']['main']['App']['ForceUpdate']();
 }
 
+export function ForgetBaseStation(arg1) {
+  return window['go']['main']['App']['ForgetBaseStation'](arg1);
+}
+
 export function GetConfiguration() {
   return window['go']['main']['App']['GetConfiguration']();
 }

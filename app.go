@@ -22,14 +22,14 @@ var WAKE_UP_CHANNEL = make(chan interface{})
 var knownBaseStations = cmap.New[*BaseStation]()
 
 type JsonBaseStation struct {
-	Name        string    `json:"name"`
-	Channel     int       `json:"channel"`
-	PowerState  int       `json:"power_state"`
-	LastUpdated time.Time `json:"last_updated"`
-	Version     int       `json:"version"`
-	Status      string    `json:"status"`
-	Managed     bool      `json:"managed"`
-	Id          string    `json:"id"`
+	Name         string    `json:"name"`
+	Channel      int       `json:"channel"`
+	PowerState   int       `json:"power_state"`
+	LastUpdated  time.Time `json:"last_updated"`
+	Version      int       `json:"version"`
+	Status       string    `json:"status"`
+	ManagedFlags int       `json:"managed_flags"`
+	Id           string    `json:"id"`
 }
 
 //go:embed VERSION
@@ -93,9 +93,24 @@ func (a *App) preloadBaseStations() {
 	steamVrRunning, _ := isProcRunning("vrserver")
 	for name, baseStation := range a.config.KnownBaseStations {
 		log.Printf("Preload base station: %s %+v\n", name, baseStation)
-		preloadedBaseStation := PreloadBaseStation(*baseStation, steamVrRunning && baseStation.Managed)
+		preloadedBaseStation := PreloadBaseStation(*baseStation, steamVrRunning && ((baseStation.ManagedFlags&2) > 0))
 		knownBaseStations.Set(name, &preloadedBaseStation)
 	}
+}
+
+func (a *App) ForgetBaseStation(name string) {
+	station, found := knownBaseStations.Get(name)
+
+	if !found {
+		return
+	}
+
+	bs := *station
+	bs.Disconnect()
+
+	a.config.ForgetBaseStation(name)
+
+	knownBaseStations.Remove(name)
 }
 
 // I REALLY SHOULD NOT DO THAT
@@ -153,21 +168,21 @@ func (a *App) GetFoundBaseStations() map[string]JsonBaseStation {
 
 		configBaseStation := a.config.KnownBaseStations[name]
 
-		managed := false
+		managed := 0
 
 		if configBaseStation != nil {
-			managed = configBaseStation.Managed
+			managed = configBaseStation.ManagedFlags
 		}
 
 		result[bs.GetId()] = JsonBaseStation{
-			Name:        bs.GetName(),
-			Channel:     bs.GetChannel(),
-			PowerState:  bs.GetPowerState(),
-			LastUpdated: time.Now(),
-			Version:     bs.GetVersion(),
-			Status:      bs.GetStatus(),
-			Managed:     managed,
-			Id:          bs.GetId(),
+			Name:         bs.GetName(),
+			Channel:      bs.GetChannel(),
+			PowerState:   bs.GetPowerState(),
+			LastUpdated:  time.Now(),
+			Version:      bs.GetVersion(),
+			Status:       bs.GetStatus(),
+			ManagedFlags: managed,
+			Id:           bs.GetId(),
 		}
 
 	}

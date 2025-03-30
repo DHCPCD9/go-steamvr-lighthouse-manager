@@ -345,7 +345,14 @@ func (lv *LighthouseV2) Disconnect() {
 	if lv.p == nil {
 		return
 	}
-	lv.p.Disconnect()
+	err := lv.p.Disconnect()
+
+	if err != nil {
+		log.Println("Failed to disconnect.")
+		log.Println(err)
+		return
+	}
+	log.Println("Device has been disconnected")
 }
 
 func (lv *LighthouseV2) GetVersion() int {

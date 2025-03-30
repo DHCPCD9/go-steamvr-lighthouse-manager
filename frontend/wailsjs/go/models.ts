@@ -7,7 +7,7 @@ export namespace main {
 	    channel: number;
 	    nickname: string;
 	    id: string;
-	    managed: boolean;
+	    managed_flags: number;
 	    groups: string[];
 	
 	    static createFrom(source: any = {}) {
@@ -21,7 +21,7 @@ export namespace main {
 	        this.channel = source["channel"];
 	        this.nickname = source["nickname"];
 	        this.id = source["id"];
-	        this.managed = source["managed"];
+	        this.managed_flags = source["managed_flags"];
 	        this.groups = source["groups"];
 	    }
 	

@@ -15,7 +15,7 @@ export function BaseStation({ station, refreshBaseStations }) {
     const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);    
     const identitify = async () => {
         
-        let result = await IdentitifyBaseStation(station.name);
+        let result = await IdentitifyBaseStation(station.id);
 
         if (result != "ok") return alert(result);
 
@@ -29,7 +29,7 @@ export function BaseStation({ station, refreshBaseStations }) {
     const updatePowerState = async () => {
         if (isAwoke) {
             //Sleeping of
-            let result = await ChangeBaseStationPowerStatus(station.name, "sleep");
+            let result = await ChangeBaseStationPowerStatus(station.id, "sleep");
             if (result != "ok") return alert(result);
 
             setPowerState(0x00);
@@ -38,7 +38,7 @@ export function BaseStation({ station, refreshBaseStations }) {
         }
 
         //Waking it up
-        await ChangeBaseStationPowerStatus(station.name, "awake");
+        await ChangeBaseStationPowerStatus(station.id, "awake");
         setPowerState(0x0B);
         await refreshBaseStations();
     }

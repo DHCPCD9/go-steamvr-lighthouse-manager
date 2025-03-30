@@ -8,6 +8,8 @@ export function ChangeBaseStationPowerStatus(arg1:string,arg2:string):Promise<st
 
 export function ForceUpdate():Promise<void>;
 
+export function ForgetBaseStation(arg1:string):Promise<void>;
+
 export function GetConfiguration():Promise<main.Configuration>;
 
 export function GetFoundBaseStations():Promise<Record<string, main.JsonBaseStation>>;

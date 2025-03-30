@@ -21,13 +21,18 @@ var manifest string
 var vrappconfig string
 
 type BaseStationConfiguration struct {
-	MacAddress  string    `json:"mac_address"`
-	LastSeen    time.Time `json:"last_seen"`
-	LastChannel int       `json:"channel"`
-	Nickname    string    `json:"nickname"`
-	Id          string    `json:"id"`
-	Managed     bool      `json:"managed"`
-	GroupNames  []string  `json:"groups"`
+	MacAddress   string    `json:"mac_address"`
+	LastSeen     time.Time `json:"last_seen"`
+	LastChannel  int       `json:"channel"`
+	Nickname     string    `json:"nickname"`
+	Id           string    `json:"id"`
+	ManagedFlags int       `json:"managed_flags"`
+	GroupNames   []string  `json:"groups"`
+}
+
+type Group struct {
+	Name         string `json:"name"`
+	ManagedFlags int    `json:"managed_flags"`
 }
 
 type Configuration struct {
@@ -175,15 +180,20 @@ func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
 	bs := *baseStation
 
 	c.KnownBaseStations[bs.GetId()] = &BaseStationConfiguration{
-		MacAddress:  bs.GetMAC(),
-		LastSeen:    time.Now(),
-		LastChannel: bs.GetChannel(),
-		Nickname:    bs.GetId(),
-		Id:          bs.GetId(),
-		Managed:     true,
-		GroupNames:  []string{},
+		MacAddress:   bs.GetMAC(),
+		LastSeen:     time.Now(),
+		LastChannel:  bs.GetChannel(),
+		Nickname:     bs.GetId(),
+		Id:           bs.GetId(),
+		ManagedFlags: 6,
+		GroupNames:   []string{},
 	}
 
+	c.Save()
+}
+
+func (c *Configuration) ForgetBaseStation(name string) {
+	delete(c.KnownBaseStations, name)
 	c.Save()
 }
 
