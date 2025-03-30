@@ -56,7 +56,7 @@ export function BaseStation({ station, refreshBaseStations }) {
     
 
     return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer">
-        <div className="flex flex-row gap-[16px] items-center" onClick={() => route(`/devices/${station.name}`)}>
+        <div className="flex flex-row gap-[16px] items-center" onClick={() => route(`/devices/${station.id}`)}>
             <BaseStationIcon  />
             <div className="flex flex-col gap-[2px] text-[14px]">
                 <span className="flex flex-row gap-[6px] items-center">
@@ -74,17 +74,17 @@ export function BaseStation({ station, refreshBaseStations }) {
             <AnimatePresence>
 
             
-            {isAwoke ? <motion.div key={"identitfy"} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-110"} onClick={identitify} disabled={identitfyDisabled}>
+            {isAwoke && station.status == "ready" ? <motion.div key={"identitfy"} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-120"} onClick={identitify} disabled={identitfyDisabled}>
                     <VisibilityIcon />
                 </button>
             </motion.div>
             : null}
 
             <motion.div key={"awoke"}>
-                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-110" onClick={updatePowerState}>
+                {station.status == "ready" && <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-120" onClick={updatePowerState}>
                    <PowerStatusIcon class={`fill-[#C6C6C6]`} />
-                </button>
+                </button> }
             </motion.div>
             {/* <button key={"open"}>
                 <ChevronRightIcon />

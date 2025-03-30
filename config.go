@@ -138,6 +138,39 @@ func (c *Configuration) UpdateValue(jsonName string, value interface{}) {
 	log.Printf("JSON field name %s not found in struct\n", jsonName)
 }
 
+func (c *Configuration) UpdateBaseStationValue(baseStation string, jsonName string, value interface{}) {
+
+	if c.KnownBaseStations[baseStation] == nil {
+		return
+	}
+	structValue := reflect.ValueOf(c.KnownBaseStations[baseStation]).Elem()
+	structType := structValue.Type()
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		tag := field.Tag.Get("json")
+		tagParts := strings.Split(tag, ",")
+		jsonTagName := tagParts[0]
+
+		if jsonTagName == jsonName {
+			fieldValue := structValue.Field(i)
+			log.Println("Found field:", field.Name, "value:", fieldValue.Interface())
+
+			if fieldValue.CanSet() {
+				val := reflect.ValueOf(value)
+				if val.Type().ConvertibleTo(fieldValue.Type()) {
+					fieldValue.Set(val.Convert(fieldValue.Type()))
+					c.Save()
+				} else {
+					log.Printf("Type mismatch: %s is %s, not %s\n", jsonName, val.Type(), fieldValue.Type())
+				}
+			}
+			return
+		}
+	}
+	log.Printf("JSON field name %s not found in struct\n", jsonName)
+}
+
 func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
 	bs := *baseStation
 

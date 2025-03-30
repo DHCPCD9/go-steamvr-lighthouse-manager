@@ -1,12 +1,13 @@
 import { useRouter } from "preact-router"
 import { ContainerTitleBar } from "../components/ContainerTitleBar"
 import { useState, useEffect } from 'preact/hooks'
-import { ChangeBaseStationChannel, GetFoundBaseStations, GetVersion } from "../../wailsjs/go/main/App"
+import { ChangeBaseStationChannel, GetFoundBaseStations, GetVersion, UpdateBaseStationParam } from "../../wailsjs/go/main/App"
 import { smoothResize } from "../utils/windows";
 import { ChevronIcon } from "../assets/icons/ChevronIcon"
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from "react-i18next";
 import { DropdownOption } from "../components/Dropdown";
+import { InputOption } from "../components/Input";
 
 export function BaseStationSettingsPage() {
 
@@ -15,7 +16,8 @@ export function BaseStationSettingsPage() {
     const [channelChangeActive, setChannelChangeActive] = useState(false);
     const [otherBaseStations, setOtherBaseStations] = useState();
     const [channel, setChannel] = useState();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const [nickname, setNickname] = useState();
 
 
     useEffect(() => {
@@ -27,6 +29,8 @@ export function BaseStationSettingsPage() {
             setLighthouse(baseStations[matches.id]);
 
             setChannel(baseStations[matches.id].channel);
+
+            setNickname(baseStations[matches.id].name)
 
         })()
     }, []);
@@ -42,10 +46,10 @@ export function BaseStationSettingsPage() {
     useEffect(() => {
         (async () => {
             if (channelChangeActive) {
-                return await smoothResize(700, 236, 150);
+                return await smoothResize(700, 510, 150);
             }
 
-            return await smoothResize(700, 188, 150);
+            return await smoothResize(700, 462, 150);
         })()
     }, [channelChangeActive]);
 
@@ -67,7 +71,14 @@ export function BaseStationSettingsPage() {
 
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white py-[12px] px-[24px] text-[24px] poppins-medium flex flex-row gap-[12px] items-center">
-            <ContainerTitleBar items={[t("Devices"), matches.id]} />
+            <ContainerTitleBar items={[t("Devices"), matches.id]} beforeExit={() => {
+            UpdateBaseStationParam(lighthouse.id, "nickname", nickname ? nickname : lighthouse.id);
+                
+            }} />
+        </div>
+
+        <div className="text-white poppins-regular px-[24px]">
+            <InputOption maxLength={16} key={"nickname"} title={t("Nickname")} description={t("Base station nickname to display")} placeholder={lighthouse && lighthouse.id} value={nickname} setValue={setNickname} />
         </div>
         <div className="text-white poppins-regular px-[24px]">
             <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: channel, value: channel }} items={[...Array(16).keys().map(c => {

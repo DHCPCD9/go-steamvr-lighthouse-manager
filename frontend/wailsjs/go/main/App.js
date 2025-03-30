@@ -66,6 +66,10 @@ export function ToggleTray() {
   return window['go']['main']['App']['ToggleTray']();
 }
 
+export function UpdateBaseStationParam(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UpdateBaseStationParam'](arg1, arg2, arg3);
+}
+
 export function UpdateConfigValue(arg1, arg2) {
   return window['go']['main']['App']['UpdateConfigValue'](arg1, arg2);
 }

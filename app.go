@@ -29,6 +29,7 @@ type JsonBaseStation struct {
 	Version     int       `json:"version"`
 	Status      string    `json:"status"`
 	Managed     bool      `json:"managed"`
+	Id          string    `json:"id"`
 }
 
 //go:embed VERSION
@@ -89,9 +90,10 @@ func (a *App) startup(ctx context.Context) {
 
 func (a *App) preloadBaseStations() {
 
+	steamVrRunning, _ := isProcRunning("vrserver")
 	for name, baseStation := range a.config.KnownBaseStations {
 		log.Printf("Preload base station: %s %+v\n", name, baseStation)
-		preloadedBaseStation := PreloadBaseStation(*baseStation)
+		preloadedBaseStation := PreloadBaseStation(*baseStation, steamVrRunning && baseStation.Managed)
 		knownBaseStations.Set(name, &preloadedBaseStation)
 	}
 }
@@ -165,11 +167,29 @@ func (a *App) GetFoundBaseStations() map[string]JsonBaseStation {
 			Version:     bs.GetVersion(),
 			Status:      bs.GetStatus(),
 			Managed:     managed,
+			Id:          bs.GetId(),
 		}
 
 	}
 
 	return result
+}
+
+func (a *App) UpdateBaseStationParam(name string, param string, value interface{}) {
+
+	bs, found := knownBaseStations.Get(name)
+
+	if !found {
+		return
+	}
+
+	a.config.UpdateBaseStationValue(name, param, value)
+
+	baseStation := *bs
+
+	if param == "nickname" {
+		baseStation.SetName(value.(string))
+	}
 }
 
 func (a *App) GetConfiguration() *Configuration {

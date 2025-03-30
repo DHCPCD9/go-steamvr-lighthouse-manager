@@ -34,6 +34,8 @@ export function ToggleSteamVRManagement():Promise<main.Configuration>;
 
 export function ToggleTray():Promise<main.Configuration>;
 
+export function UpdateBaseStationParam(arg1:string,arg2:string,arg3:any):Promise<void>;
+
 export function UpdateConfigValue(arg1:string,arg2:any):Promise<void>;
 
 export function WakeUpAllBaseStations():Promise<void>;

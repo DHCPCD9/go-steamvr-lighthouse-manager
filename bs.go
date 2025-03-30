@@ -31,6 +31,7 @@ type BaseStation interface {
 	SetPowerState(state byte)
 	Identitfy()
 	GetName() string
+	SetName(string)
 	GetVersion() int
 	Disconnect()
 	GetStatus() string
@@ -54,7 +55,7 @@ type LighthouseV2 struct {
 	Status                   string
 }
 
-func PreloadBaseStation(config BaseStationConfiguration) BaseStation {
+func PreloadBaseStation(config BaseStationConfiguration, wakeUp bool) BaseStation {
 	lh := &LighthouseV2{
 		Name:             config.Nickname,
 		Id:               config.Id,
@@ -65,12 +66,12 @@ func PreloadBaseStation(config BaseStationConfiguration) BaseStation {
 		CacheTimer:       time.NewTicker(time.Second * 10),
 	}
 
-	go connectToPreloadedBaseStation(lh, config)
+	go connectToPreloadedBaseStation(lh, config, wakeUp)
 
 	return lh
 }
 
-func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration) {
+func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool) {
 
 	parsedMac, err := bluetooth.ParseMAC(config.MacAddress)
 
@@ -93,7 +94,7 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 	bs.adapter = adapter
 	bs.p = &conn
 
-	log.Printf("Connected to base station: %s\n", config.Id)
+	log.Printf("Connected to base station: %s, wake up: %+v\n", config.Id, wakeUp)
 
 	services, err := conn.DiscoverServices(nil)
 	if err != nil {
@@ -117,6 +118,10 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 
 	bs.CachedChannel = bs.readChannel()
 	bs.CachedPowerState = bs.readPowerState()
+
+	if wakeUp {
+		bs.SetPowerState(byte(0x01))
+	}
 
 	go bs.StartCaching()
 }
@@ -361,4 +366,8 @@ func (lv *LighthouseV2) GetMAC() string {
 
 func (lv *LighthouseV2) GetStatus() string {
 	return lv.Status
+}
+
+func (lv *LighthouseV2) SetName(name string) {
+	lv.Name = name
 }
