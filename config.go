@@ -27,12 +27,12 @@ type BaseStationConfiguration struct {
 	Nickname     string    `json:"nickname"`
 	Id           string    `json:"id"`
 	ManagedFlags int       `json:"managed_flags"`
-	GroupNames   []string  `json:"groups"`
 }
 
 type Group struct {
-	Name         string `json:"name"`
-	ManagedFlags int    `json:"managed_flags"`
+	Name           string
+	ManagedFlags   int      `json:"managed_flags"`
+	BaseStationIDs []string `json:"base_stations"`
 }
 
 type Configuration struct {
@@ -41,6 +41,7 @@ type Configuration struct {
 	AllowTray          bool                                 `json:"allow_tray"`
 	TrayNotified       bool                                 `json:"tray_notified"`
 	KnownBaseStations  map[string]*BaseStationConfiguration `json:"known_base_stations"`
+	Groups             map[string]*Group                    `json:"groups"`
 }
 
 type AppConfig struct {
@@ -105,6 +106,10 @@ func (c *Configuration) Load() {
 		c.KnownBaseStations = make(map[string]*BaseStationConfiguration) // Works in case if user updated from old version
 	}
 
+	if c.Groups == nil {
+		c.Groups = make(map[string]*Group)
+	}
+
 	if c.IsSteamVRInstalled {
 		if c.IsSteamVRManaged {
 			AddToStartup()
@@ -115,32 +120,8 @@ func (c *Configuration) Load() {
 }
 
 func (c *Configuration) UpdateValue(jsonName string, value interface{}) {
-	structValue := reflect.ValueOf(c).Elem()
-	structType := structValue.Type()
-
-	for i := 0; i < structType.NumField(); i++ {
-		field := structType.Field(i)
-		tag := field.Tag.Get("json")
-		tagParts := strings.Split(tag, ",")
-		jsonTagName := tagParts[0]
-
-		if jsonTagName == jsonName {
-			fieldValue := structValue.Field(i)
-			log.Println("Found field:", field.Name, "value:", fieldValue.Interface())
-
-			if fieldValue.CanSet() {
-				val := reflect.ValueOf(value)
-				if val.Type().ConvertibleTo(fieldValue.Type()) {
-					fieldValue.Set(val.Convert(fieldValue.Type()))
-					c.Save()
-				} else {
-					log.Printf("Type mismatch: %s is %s, not %s\n", jsonName, val.Type(), fieldValue.Type())
-				}
-			}
-			return
-		}
-	}
-	log.Printf("JSON field name %s not found in struct\n", jsonName)
+	UpdateValueOfInterface(c, jsonName, value)
+	c.Save()
 }
 
 func (c *Configuration) UpdateBaseStationValue(baseStation string, jsonName string, value interface{}) {
@@ -148,32 +129,17 @@ func (c *Configuration) UpdateBaseStationValue(baseStation string, jsonName stri
 	if c.KnownBaseStations[baseStation] == nil {
 		return
 	}
-	structValue := reflect.ValueOf(c.KnownBaseStations[baseStation]).Elem()
-	structType := structValue.Type()
+	UpdateValueOfInterface(c.KnownBaseStations[baseStation], jsonName, value)
+	c.Save()
+}
 
-	for i := 0; i < structType.NumField(); i++ {
-		field := structType.Field(i)
-		tag := field.Tag.Get("json")
-		tagParts := strings.Split(tag, ",")
-		jsonTagName := tagParts[0]
+func (c *Configuration) UpdateGroup(groupName string, jsonName string, value interface{}) {
 
-		if jsonTagName == jsonName {
-			fieldValue := structValue.Field(i)
-			log.Println("Found field:", field.Name, "value:", fieldValue.Interface())
-
-			if fieldValue.CanSet() {
-				val := reflect.ValueOf(value)
-				if val.Type().ConvertibleTo(fieldValue.Type()) {
-					fieldValue.Set(val.Convert(fieldValue.Type()))
-					c.Save()
-				} else {
-					log.Printf("Type mismatch: %s is %s, not %s\n", jsonName, val.Type(), fieldValue.Type())
-				}
-			}
-			return
-		}
+	if c.Groups[groupName] == nil {
+		return
 	}
-	log.Printf("JSON field name %s not found in struct\n", jsonName)
+	UpdateValueOfInterface(c.Groups[groupName], jsonName, value)
+	c.Save()
 }
 
 func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
@@ -186,7 +152,6 @@ func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
 		Nickname:     bs.GetId(),
 		Id:           bs.GetId(),
 		ManagedFlags: 6,
-		GroupNames:   []string{},
 	}
 
 	c.Save()
@@ -195,6 +160,27 @@ func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
 func (c *Configuration) ForgetBaseStation(name string) {
 	delete(c.KnownBaseStations, name)
 	c.Save()
+}
+
+func (c *Configuration) CreateGroup(name string) {
+	c.Groups[name] = &Group{
+		Name:           name,
+		ManagedFlags:   6,
+		BaseStationIDs: []string{},
+	}
+}
+
+func (c *Configuration) DeleteGroup(name string) {
+	delete(c.Groups, name)
+	c.Save()
+}
+
+func (c *Configuration) UpdateGroupValue(name string) {
+	c.Groups[name] = &Group{
+		Name:           name,
+		ManagedFlags:   6,
+		BaseStationIDs: []string{},
+	}
 }
 
 func (c *Configuration) Save() {
@@ -296,4 +282,32 @@ func GetSteamVRInstalled() bool {
 	_, err := os.ReadFile(fp)
 
 	return err == nil
+}
+
+func UpdateValueOfInterface(c interface{}, jsonName string, value interface{}) {
+	structValue := reflect.ValueOf(c).Elem()
+	structType := structValue.Type()
+
+	for i := 0; i < structType.NumField(); i++ {
+		field := structType.Field(i)
+		tag := field.Tag.Get("json")
+		tagParts := strings.Split(tag, ",")
+		jsonTagName := tagParts[0]
+
+		if jsonTagName == jsonName {
+			fieldValue := structValue.Field(i)
+			log.Println("Found field:", field.Name, "value:", fieldValue.Interface())
+
+			if fieldValue.CanSet() {
+				val := reflect.ValueOf(value)
+				if val.Type().ConvertibleTo(fieldValue.Type()) {
+					fieldValue.Set(val.Convert(fieldValue.Type()))
+				} else {
+					log.Printf("Type mismatch: %s is %s, not %s\n", jsonName, val.Type(), fieldValue.Type())
+				}
+			}
+			return
+		}
+	}
+	log.Printf("JSON field name %s not found in struct\n", jsonName)
 }

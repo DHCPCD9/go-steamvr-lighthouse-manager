@@ -11,14 +11,9 @@ export function BaseStationsList() {
     const [searching, setSearching] = useState(true);
     const [baseStations, setBaseStations] = useState([]);
     const [activeBaseStation, setActiveBaseStation] = useState();
+    const [selectedBaseStations, setSelectedBaseStation] = useState([]);
 
     const { t } = useTranslation();
-
-    const refreshBaseStations = async () => {
-        let baseStations = await GetFoundBaseStations();
-
-        setBaseStations(Object.values(baseStations));
-    }
 
     useEffect(() => {
         let interval;
@@ -35,7 +30,8 @@ export function BaseStationsList() {
         })()
 
         return () => clearInterval(interval);
-    }, [searching])
+    }, [searching]);
+
     useEffect(() => {
         (async () => {
             if (searching) {
@@ -54,7 +50,20 @@ export function BaseStationsList() {
         })()
     }, []);
 
-    return (<div className="flex flex-col gap-2 select-none">
+    const refreshBaseStations = async () => {
+        let baseStations = await GetFoundBaseStations();
+
+        setBaseStations(Object.values(baseStations));
+    }
+
+    const selectBaseStation = async (id) => {
+        // console.log({selectedBaseStations, s: selectedBaseStations.includes(id)})
+        // if (selectedBaseStations.includes(id)) return setSelectedBaseStation(selectedBaseStations.filter(c => c != id));
+
+        // setSelectedBaseStation([...selectedBaseStations, id]);
+    }
+
+    return (<div className="flex flex-col gap-2 select-none justify-between">
         <div className="text-white py-[6px] px-[24px] text-[24px] poppins-medium flex flex-row gap-[12px] items-center">
             <ContainerTitleBar items={[t("Devices"), activeBaseStation ? activeBaseStation : null]} />
         </div>
@@ -65,7 +74,7 @@ export function BaseStationsList() {
 
                     {baseStations.map((station, index) =>
                         <motion.div key={index} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: (index + 1) * 0.150 }}>
-                            <BaseStation station={station} key={index + 1} setCurrentBaseStation={setActiveBaseStation} />
+                            <BaseStation station={station} key={index + 1} setCurrentBaseStation={setActiveBaseStation} selected={selectedBaseStations.includes(station.id)} onSelect={() => selectBaseStation(station.id)} />
                         </motion.div>
                     )}
 
@@ -75,16 +84,22 @@ export function BaseStationsList() {
                         </div>
                     </motion.div> : null}
 
-                    {baseStations.length > 0 && baseStations.length < 4 && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: ((baseStations.length + 1) * 0.150)}} className="flex justify-center text-white/50 poppins-reglar">
+                    {/* {baseStations.length > 0 && baseStations.length < 4 && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ delay: ((baseStations.length + 1) * 0.150)}} className="flex justify-center text-white/50 poppins-reglar">
                         <Trans i18nKey={"Found base stations"}  count={baseStations.length}>
                             Found {{ baseStations: baseStations.length }} Lighthouse(s)
                         </Trans>
-                    </motion.div>}
+                    </motion.div>} */}
                     {!baseStations.length && !searching && <motion.div key={1337} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="poppins-regular text-center text-[14px] text-[#C6C6C6]">
                         {t("No base stations seem to be found, maybe other programs are connected to them?")}
                     </motion.div>}
                 </div>
 
+
+            {/* {selectedBaseStations.length > 0 && <motion.div className="px-[24px] z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0}}>
+                <button  className="bg-[#1F1F1F] text-[#C6C6C6] poppins-regular w-full py-[4px] text-[14px] rounded-[6px] hover:bg-[#434343] duration-200 cursor-pointer active:bg-[#0D0D0D]!">
+                    Create group
+                </button>
+            </motion.div>} */}
             </AnimatePresence>
 
         </div>

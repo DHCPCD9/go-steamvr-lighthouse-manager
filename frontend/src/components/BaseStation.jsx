@@ -8,7 +8,8 @@ import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { route } from "preact-router";
 import { useTranslation } from "react-i18next";
-export function BaseStation({ station, refreshBaseStations }) {
+import { TitleBarSettingsIcon } from "../assets/icons/TitleBarSettingsIcon";
+export function BaseStation({ station, refreshBaseStations, onSelect, selected }) {
 
     const isAwoke = [0x0B, 0x01, 0x09].includes(station.power_state);
 
@@ -55,8 +56,10 @@ export function BaseStation({ station, refreshBaseStations }) {
     }, [station.power_state, station.status])
     
 
-    return (<div className="text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] duration-200 cursor-pointer">
-        <div className="flex flex-row gap-[16px] items-center" onClick={() => route(`/devices/${station.id}`)}>
+    return (<div className={`text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] data-[selected="true"]:bg-[#434343] duration-200 cursor-pointer`} data-selected={selected}>
+        <div className="flex flex-row gap-[16px] items-center" onClick={() => {
+            onSelect();
+        }}>
             <BaseStationIcon  />
             <div className="flex flex-col gap-[2px] text-[14px]">
                 <span className="flex flex-row gap-[6px] items-center">
@@ -75,21 +78,23 @@ export function BaseStation({ station, refreshBaseStations }) {
 
             
             {isAwoke && station.status == "ready" ? <motion.div key={"identitfy"} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-120"} onClick={identitify} disabled={identitfyDisabled}>
+                <button  className={"[&>svg]:fill-[#C6C6C6] opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-120 cursor-pointer"} onClick={identitify} disabled={identitfyDisabled}>
                     <VisibilityIcon />
                 </button>
             </motion.div>
             : null}
 
             <motion.div key={"awoke"}>
-                {station.status == "ready" && <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-120" onClick={updatePowerState}>
+                {station.status == "ready" && <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-120 cursor-pointer" onClick={updatePowerState}>
                    <PowerStatusIcon class={`fill-[#C6C6C6]`} />
                 </button> }
             </motion.div>
             {/* <button key={"open"}>
                 <ChevronRightIcon />
             </button> */}
-            
+            <button key={"Settings"} className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 scale-140 cursor-pointer" onClick={() => route(`/devices/${station.id}`)} >
+                <TitleBarSettingsIcon  class={`fill-[#C6C6C6]`}  />
+            </button>
             </AnimatePresence>
         </div>
     </div>)
