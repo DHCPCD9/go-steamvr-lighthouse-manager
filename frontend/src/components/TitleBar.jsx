@@ -22,10 +22,11 @@ export function TitleBar() {
         
         for(const baseStation of Object.values(await GetFoundBaseStations())) {
 
-            if (!(baseStation.managed_flags & flags)) continue;
-            if (baseStation.managed) {
-                await ChangeBaseStationPowerStatus(baseStation.name, state);
-            }
+            
+            console.log({f : baseStation.managed_flags & flags, bs: baseStation})
+            if (!((baseStation.managed_flags & flags) > 0)) continue;
+            await ChangeBaseStationPowerStatus(baseStation.id, state);
+            
         }
     }
 

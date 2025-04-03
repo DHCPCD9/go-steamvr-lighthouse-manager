@@ -63,7 +63,7 @@ export function BaseStationSettingsPage() {
 
         if (channel < 1 && channel > 16) return alert("???");
 
-        await ChangeBaseStationChannel(lighthouse.name, channel);
+        await ChangeBaseStationChannel(lighthouse.id, channel);
 
         let baseStations = await GetFoundBaseStations();
         setOtherBaseStations(Object.values(baseStations));

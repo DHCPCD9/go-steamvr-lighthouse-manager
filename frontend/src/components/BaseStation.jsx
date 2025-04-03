@@ -33,14 +33,11 @@ export function BaseStation({ station, refreshBaseStations, onSelect, selected }
             let result = await ChangeBaseStationPowerStatus(station.id, "sleep");
             if (result != "ok") return alert(result);
 
-            setPowerState(0x00);
-
             return await refreshBaseStations();
         }
 
         //Waking it up
         await ChangeBaseStationPowerStatus(station.id, "awake");
-        setPowerState(0x0B);
         await refreshBaseStations();
     }
 

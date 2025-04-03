@@ -74,7 +74,7 @@ export function BaseStationsList() {
 
                     {baseStations.map((station, index) =>
                         <motion.div key={index} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: (index + 1) * 0.150 }}>
-                            <BaseStation station={station} key={index + 1} setCurrentBaseStation={setActiveBaseStation} selected={selectedBaseStations.includes(station.id)} onSelect={() => selectBaseStation(station.id)} />
+                            <BaseStation station={station} key={index + 1} refreshBaseStations={refreshBaseStations} setCurrentBaseStation={setActiveBaseStation} selected={selectedBaseStations.includes(station.id)} onSelect={() => selectBaseStation(station.id)} />
                         </motion.div>
                     )}
 
