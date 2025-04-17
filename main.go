@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/application"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -16,7 +17,6 @@ var assets embed.FS
 var icon []byte
 
 func main() {
-
 	// Create an instance of the app structure
 	app := NewApp()
 
@@ -38,11 +38,13 @@ func main() {
 		Frameless:        true,
 		BackgroundColour: &options.RGBA{R: 18, G: 18, B: 18, A: 1},
 		OnStartup:        app.startup,
+		Windows: &windows.Options{
+			IsZoomControlEnabled: false,
+		},
 		Bind: []interface{}{
 			app,
 		},
 	})
-
 	err := mainApp.Run()
 
 	if err != nil {
