@@ -157,7 +157,7 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 		LastUpdated:  nil,
 		Version:      bs.GetVersion(),
 		Status:       bs.GetStatus(),
-		ManagedFlags: 0,
+		ManagedFlags: 6,
 		Id:           bs.GetId(),
 	}))
 
