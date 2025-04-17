@@ -15,21 +15,25 @@ export function GroupedBaseStationSettings() {
 
 
     const [{ matches }, push] = useRouter();
+
+    const [name, setName] = useState(matches.name);
+    
     const { setItems } = useContainerTitlebar();
-    const baseStations = useGroupedLighthouses(matches.name);
+    const baseStations = useGroupedLighthouses(name);
     const group = useLighthouseGroup(matches.name);
     const { t } = useTranslation();
-    const [name, setName] = useState(matches.name)
-    const groupName = useDebounce(name, 300);
+    const groupName = useDebounce(name, 1000);
 
     
     useEffect(() => {
 
         (async () => {
+            console.log(groupName)
 
-            if (matches.name == groupName) return;
-            await RenameGroup(matches.name, groupName);
-            push(`/groups/${groupName}`, true);
+            if (name == groupName) return;
+            await RenameGroup(name, groupName);
+            setName(groupName);
+            await push(`/groups/${groupName}/settings`, true);
         })()
     }, [groupName]);
 
@@ -55,11 +59,10 @@ export function GroupedBaseStationSettings() {
         (async () => {
             if (!group) return push("/");
 
-            setItems([{ text: "Devices", link: "/" }, { text: group.name, link: `/groups/${group.name}` }, { text: "Settings", link: `/groups/${group.name}/settings` }]);
+            setItems([{ text: "Devices", link: "/" }, { text: name, link: `/groups/${name}` }, { text: "Settings", link: `/groups/${group.name}/settings` }]);
         })()
-    }, []);
+    }, [groupName]);
 
-    console.log(group)
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white poppins-regular px-[24px]">
             <InputOption maxLength={16} key={"nickname"} title={t("Group name")} description={t("Display group name.")} value={name} setValue={(e) => setName(e)} />
