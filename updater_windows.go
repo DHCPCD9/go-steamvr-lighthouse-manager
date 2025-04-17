@@ -19,9 +19,6 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-//go:embed VERSION_FLAGS
-var VERSION_FLAGS string
-
 var FLAGS_NO_UPDATE string = "NO_UPDATES"
 
 func ForceUpdate() {
