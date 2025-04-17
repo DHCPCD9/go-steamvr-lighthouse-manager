@@ -8,7 +8,9 @@ require (
 	github.com/gen2brain/beeep v0.0.0-20240516210008-9c006672e7f4
 	github.com/getlantern/systray v1.2.2
 	github.com/google/go-github/v69 v69.2.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/orcaman/concurrent-map/v2 v2.0.1
+	github.com/teivah/broadcast v0.1.0
 	github.com/tiendc/go-deepcopy v1.5.1
 	github.com/wailsapp/wails/v2 v2.10.0
 	golang.org/x/sys v0.31.0
