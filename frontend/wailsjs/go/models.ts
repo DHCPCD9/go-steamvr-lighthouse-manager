@@ -42,7 +42,7 @@ export namespace main {
 		}
 	}
 	export class Group {
-	    Name: string;
+	    name: string;
 	    managed_flags: number;
 	    base_stations: string[];
 	
@@ -52,7 +52,7 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
+	        this.name = source["name"];
 	        this.managed_flags = source["managed_flags"];
 	        this.base_stations = source["base_stations"];
 	    }
