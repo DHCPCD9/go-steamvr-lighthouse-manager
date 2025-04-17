@@ -100,6 +100,14 @@ func reader(conn *websocket.Conn) {
 
 		bs := *v
 
+		configBs := config.KnownBaseStations[bs.GetId()]
+
+		managedFlags := 6
+
+		if configBs != nil {
+			managedFlags = configBs.ManagedFlags
+		}
+
 		conn.WriteJSON(preparePacket("lighthouse.found", JsonBaseStation{
 			Name:         bs.GetName(),
 			Channel:      bs.GetChannel(),
@@ -107,7 +115,7 @@ func reader(conn *websocket.Conn) {
 			LastUpdated:  nil,
 			Version:      bs.GetVersion(),
 			Status:       bs.GetStatus(),
-			ManagedFlags: 0,
+			ManagedFlags: managedFlags,
 			Id:           bs.GetId(),
 		}))
 	}
