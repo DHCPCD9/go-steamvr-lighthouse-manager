@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
+	"path"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 
@@ -22,14 +24,14 @@ var WAKE_UP_CHANNEL = make(chan interface{})
 var knownBaseStations = cmap.New[*BaseStation]()
 
 type JsonBaseStation struct {
-	Name         string    `json:"name"`
-	Channel      int       `json:"channel"`
-	PowerState   int       `json:"power_state"`
-	LastUpdated  time.Time `json:"last_updated"`
-	Version      int       `json:"version"`
-	Status       string    `json:"status"`
-	ManagedFlags int       `json:"managed_flags"`
-	Id           string    `json:"id"`
+	Name         string     `json:"name"`
+	Channel      int        `json:"channel"`
+	PowerState   int        `json:"power_state"`
+	LastUpdated  *time.Time `json:"last_updated"`
+	Version      int        `json:"version"`
+	Status       string     `json:"status"`
+	ManagedFlags int        `json:"managed_flags"`
+	Id           string     `json:"id"`
 }
 
 //go:embed VERSION
@@ -39,7 +41,6 @@ var version string
 type App struct {
 	ctx                   context.Context
 	bluetoothInitFinished bool
-	config                *Configuration
 }
 
 func NewApp() *App {
@@ -49,17 +50,20 @@ func NewApp() *App {
 }
 
 func (a *App) UpdateConfigValue(name string, value interface{}) {
-	a.config.UpdateValue(name, value)
+	config.UpdateValue(name, value)
 }
 func (a *App) startup(ctx context.Context) {
 
-	// f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	// if err != nil {
-	// 	log.Fatalf("error opening file: %v", err)
-	// }
-	// defer f.Close()
+	if !strings.Contains(VERSION_FLAGS, "DEBUG") {
+		f, err := os.OpenFile(path.Join(GetConfigFolder(), "log.txt"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+		if err != nil {
+			log.Fatalf("error opening file: %v", err)
+		}
+		defer f.Close()
 
-	// log.SetOutput(f)
+		log.SetOutput(f)
+
+	}
 
 	a.ctx = ctx
 
@@ -67,31 +71,119 @@ func (a *App) startup(ctx context.Context) {
 		for {
 			<-WAKE_UP_CHANNEL
 
-			if running, _ := isProcRunning("vrserver"); !running && a.config.IsSteamVRManaged {
+			running, _ := isProcRunning("vrserver.exe")
+
+			if !running && config.IsSteamVRManaged {
 				wruntime.WindowShow(a.ctx)
 			}
+
+			WEBSOCKET_BROADCAST.Broadcast(preparePacket("steamvr.status", map[string]interface{}{
+				"status": running,
+			}))
 		}
 	}()
 
-	a.config = GetConfiguration()
+	config = GetConfiguration()
 
 	go a.preloadBaseStations()
 
-	if a.config.IsSteamVRManaged && runtime.GOOS == "windows" {
-		if running, _ := isProcRunning("vrserver"); running {
+	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
+		if running, _ := isProcRunning("vrserver.exe"); running {
 			wruntime.WindowHide(a.ctx)
 		}
 	}
 
 	go systray.Run(a.trayReady, TrayExit)
 
-	//Preloading base stations
+	go StartHttp()
+
+}
+
+func (a *App) CreateGroup(name string) string {
+	if config.Groups[name] != nil {
+		return "error: Already exists"
+	}
+	config.CreateGroup(name)
+
+	newGroup := config.Groups[name]
+
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("groups.created", newGroup))
+	return "ok"
+}
+
+func (a *App) AddBaseStationToGroup(name string, station string) string {
+	if config.Groups[name] == nil {
+		return "error: Unknown group"
+	}
+
+	bs, found := knownBaseStations.Get(station)
+
+	if !found {
+		return "error: Unknown base station"
+	}
+
+	baseStation := *bs
+
+	if slices.Contains(config.Groups[name].BaseStationIDs, baseStation.GetId()) {
+		return "error: already in collection"
+	}
+
+	config.UpdateGroupValue(name, "base_stations", append(config.Groups[name].BaseStationIDs, baseStation.GetId()))
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("groups.lighthouses.added", map[string]interface{}{
+		"id":    baseStation.GetId(),
+		"group": name,
+	}))
+
+	return "ok"
+}
+
+func (a *App) RenameGroup(name string, newName string) string {
+
+	log.Println(name, newName)
+
+	log.Println(config.Groups)
+	if config.Groups[name] == nil {
+		return "error: Unknown group"
+	}
+
+	group := *config.Groups[name]
+	group.Name = newName
+	config.Groups[newName] = &group
+
+	delete(config.Groups, name)
+
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("group.rename", map[string]interface{}{
+		"old_name": name,
+		"new_name": newName,
+	}))
+
+	config.Save()
+
+	return "ok"
+}
+
+func (a *App) UpdateGroupManagedFlags(name string, managed_flags int) string {
+
+	log.Println(config.Groups)
+	if config.Groups[name] == nil {
+		return "error: Unknown group"
+	}
+
+	config.Groups[name].ManagedFlags = managed_flags
+	config.Save()
+
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("group.update.flags", map[string]interface{}{
+		"name":  name,
+		"flags": managed_flags,
+	}))
+
+	return "ok"
 }
 
 func (a *App) preloadBaseStations() {
 
-	steamVrRunning, _ := isProcRunning("vrserver")
-	for name, baseStation := range a.config.KnownBaseStations {
+	steamVrRunning, _ := isProcRunning("vrserver.exe")
+	for name, baseStation := range config.KnownBaseStations {
 		log.Printf("Preload base station: %s %+v\n", name, baseStation)
 		preloadedBaseStation := PreloadBaseStation(*baseStation, steamVrRunning && ((baseStation.ManagedFlags&2) > 0))
 		knownBaseStations.Set(name, &preloadedBaseStation)
@@ -108,7 +200,7 @@ func (a *App) ForgetBaseStation(name string) {
 	bs := *station
 	bs.Disconnect()
 
-	a.config.ForgetBaseStation(name)
+	config.ForgetBaseStation(name)
 
 	knownBaseStations.Remove(name)
 }
@@ -166,7 +258,7 @@ func (a *App) GetFoundBaseStations() map[string]JsonBaseStation {
 
 		bs := *v
 
-		configBaseStation := a.config.KnownBaseStations[name]
+		configBaseStation := config.KnownBaseStations[name]
 
 		managed := 0
 
@@ -178,7 +270,7 @@ func (a *App) GetFoundBaseStations() map[string]JsonBaseStation {
 			Name:         bs.GetName(),
 			Channel:      bs.GetChannel(),
 			PowerState:   bs.GetPowerState(),
-			LastUpdated:  time.Now(),
+			LastUpdated:  nil,
 			Version:      bs.GetVersion(),
 			Status:       bs.GetStatus(),
 			ManagedFlags: managed,
@@ -198,7 +290,7 @@ func (a *App) UpdateBaseStationParam(name string, param string, value interface{
 		return
 	}
 
-	a.config.UpdateBaseStationValue(name, param, value)
+	config.UpdateBaseStationValue(name, param, value)
 
 	baseStation := *bs
 
@@ -208,7 +300,7 @@ func (a *App) UpdateBaseStationParam(name string, param string, value interface{
 }
 
 func (a *App) GetConfiguration() *Configuration {
-	return a.config
+	return config
 }
 
 func (a *App) GetVersion() string {
@@ -224,19 +316,19 @@ func (a *App) IsUpdatingSupported() bool {
 }
 
 func (a *App) ToggleSteamVRManagement() *Configuration {
-	a.config.IsSteamVRManaged = !a.config.IsSteamVRManaged
+	config.IsSteamVRManaged = !config.IsSteamVRManaged
 
-	a.config.Save()
+	config.Save()
 
-	return a.config
+	return config
 }
 
 func (a *App) ToggleTray() Configuration {
-	a.config.AllowTray = !a.config.AllowTray
+	config.AllowTray = !config.AllowTray
 
-	a.config.Save()
+	config.Save()
 
-	return *a.config
+	return *config
 }
 
 func (a *App) InitBluetooth() bool {
@@ -289,13 +381,13 @@ func ScanCallback(app *App, a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 		knownBaseStations.Set(sr.LocalName(), &bs)
 
 		//Saving base station
-		app.config.SaveBaseStation(&bs)
+		config.SaveBaseStation(&bs)
 
 		log.Println("New base station discovered and saved")
 
-		if app.config.IsSteamVRManaged && runtime.GOOS == "windows" {
+		if config.IsSteamVRManaged && runtime.GOOS == "windows" {
 
-			running, err := isProcRunning("vrserver")
+			running, err := isProcRunning("vrserver.exe")
 
 			if err != nil {
 				//whoops
@@ -392,7 +484,7 @@ func (a *App) IsSteamVRConnected() bool {
 		return false
 	}
 
-	running, err := isProcRunning("vrserver")
+	running, err := isProcRunning("vrserver.exe")
 
 	if err != nil {
 		log.Println("Failed to obtain process.")
