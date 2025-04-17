@@ -22,7 +22,7 @@ export function InputOption({ title, description, value, setValue, placeholder, 
                         <ChevronIcon />
                     </div>
                 </button> */}
-                <input maxLength={maxLength} onChange={(e) => setValue(e.target.value)} value={value} className="w-[260px] h-[24px] bg-[#121212] rounded-md text-[12px] px-[12px] py-[3px] focus:outline-none poppins-medium" placeholder={placeholder}>
+                <input maxLength={maxLength} onChange={(e) => setValue(e.target.value)} value={value} className="w-[260px] h-[24px] bg-[#121212] text-[#888888] rounded-md text-[12px] px-[12px] py-[3px] focus:outline-none poppins-medium" placeholder={placeholder}>
 
                 </input>
             </div>
