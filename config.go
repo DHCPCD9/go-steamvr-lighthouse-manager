@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -30,7 +31,7 @@ type BaseStationConfiguration struct {
 }
 
 type Group struct {
-	Name           string
+	Name           string   `json:"name"`
 	ManagedFlags   int      `json:"managed_flags"`
 	BaseStationIDs []string `json:"base_stations"`
 }
@@ -113,6 +114,9 @@ func (c *Configuration) Load() {
 	if c.IsSteamVRInstalled {
 		if c.IsSteamVRManaged {
 			AddToStartup()
+			if !STEAMVR_WATCHING {
+				go waitForSteamVR()
+			}
 		} else {
 			RemoveFromStartup()
 		}
@@ -130,6 +134,7 @@ func (c *Configuration) UpdateBaseStationValue(baseStation string, jsonName stri
 		return
 	}
 	UpdateValueOfInterface(c.KnownBaseStations[baseStation], jsonName, value)
+	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(baseStation, fmt.Sprintf("lighthouse.update.%s", jsonName), jsonName, value))
 	c.Save()
 }
 
@@ -168,6 +173,8 @@ func (c *Configuration) CreateGroup(name string) {
 		ManagedFlags:   6,
 		BaseStationIDs: []string{},
 	}
+
+	c.Save()
 }
 
 func (c *Configuration) DeleteGroup(name string) {
@@ -175,15 +182,26 @@ func (c *Configuration) DeleteGroup(name string) {
 	c.Save()
 }
 
-func (c *Configuration) UpdateGroupValue(name string) {
-	c.Groups[name] = &Group{
-		Name:           name,
-		ManagedFlags:   6,
-		BaseStationIDs: []string{},
+func (c *Configuration) UpdateGroupValue(group, name string, value interface{}) {
+	// c.Groups[name] = &Group{
+	// 	Name:           name,
+	// 	ManagedFlags:   6,
+	// 	BaseStationIDs: []string{},
+	// }
+
+	if c.Groups[group] == nil {
+		log.Printf("No group with name %s found; name=%+v; value=%+v", group, name, value)
+		return
 	}
+
+	UpdateValueOfInterface(c.Groups[group], name, value)
+
+	c.Save()
 }
 
 func (c *Configuration) Save() {
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("config.configure", *c))
+
 	data, err := json.Marshal(c)
 
 	if err != nil {
@@ -194,6 +212,8 @@ func (c *Configuration) Save() {
 	if c.IsSteamVRInstalled {
 		if c.IsSteamVRManaged {
 			AddToStartup()
+			go waitForSteamVR()
+
 		} else {
 			RemoveFromStartup()
 		}
@@ -202,6 +222,7 @@ func (c *Configuration) Save() {
 	}
 
 	os.WriteFile(c.GetConfigPath(), data, 0644)
+
 }
 
 func (c *Configuration) GetConfigPath() string {
