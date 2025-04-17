@@ -6,11 +6,13 @@ import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 import { smoothResize } from '../utils/windows';
 import { motion } from 'framer-motion'
+import { useContainerTitlebar } from '../../lib/stores/titlebar.store';
+import { useConfig } from '../../lib/hooks/useConfig';
 
 export function SoftwareSettings() {
 
     //TODO: Reduce hooks amount
-    const [config, setConfig] = useState();
+    const config = useConfig();
     const [isUpdatingSupported, setIsUpdatingSupported] = useState(false);
     const [steamVRAvailable, setsteamVRAvailable] = useState(false);
     const [version, setVersion] = useState();
@@ -18,16 +20,13 @@ export function SoftwareSettings() {
     const { t, i18n } = useTranslation();
     const [updateText, setUpdateText] = useState(t("Check")); // I think there is better way to do it, but it works anyways
     const [dropdownOpen, setDropdownOpen] = useState(false);
-
-    const updateConfig = async () => {
-        setConfig(await GetConfiguration());
-    }
+    const { setItems, setCallbackOnLast } = useContainerTitlebar();
+    
 
     useEffect(() => {
         (async () => {
             await smoothResize(700, 435);
 
-            setConfig(await GetConfiguration());
             setVersion(await GetVersion());
             setIsUpdatingSupported(await IsUpdatingSupported());
             setsteamVRAvailable(await IsSteamVRConnectivityAvailable());
@@ -66,12 +65,10 @@ export function SoftwareSettings() {
 
     const toggleAllowTray = async () => {
         await UpdateConfigValue("allow_tray", !config.allow_tray);
-        await updateConfig();
     }
 
     const togglePowerManagement = async () => {
         await UpdateConfigValue("is_steamvr_managed", !config.is_steamvr_managed);
-        await updateConfig();
     }
 
     useEffect(() => {
@@ -95,8 +92,11 @@ export function SoftwareSettings() {
 
     const languages = Object.keys(i18n.store.data);
 
+    useEffect(() => {
+        setItems([{ text: "SteamVR LM", link: "/" }, { text: t("Settings"), link: "/settings"}])
+    }, [i18n.language])
     return (<div className="poppins-semibold text-white py-[12px] px-[24px] select-none">
-        <ContainerTitleBar items={["SteamVR LM", t("Settings")]}/>
+        {/* <ContainerTitleBar items={["SteamVR LM", t("Settings")]}/> */}
 
         <div className='flex flex-col gap-[8px] w-full pt-[8px]'>
 
