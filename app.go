@@ -84,7 +84,7 @@ func (a *App) startup(ctx context.Context) {
 	}()
 
 	config = GetConfiguration()
-
+	a.InitBluetooth()
 	go a.preloadBaseStations()
 
 	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
@@ -336,6 +336,10 @@ func (a *App) InitBluetooth() bool {
 	if a.bluetoothInitFinished {
 		return true
 	}
+
+	adapter.SetConnectHandler(func(device bluetooth.Device, connected bool) {
+		log.Printf("Connection: %s; connected=%+v\n", device.Address, connected)
+	})
 
 	if err := adapter.Enable(); err != nil {
 		return false

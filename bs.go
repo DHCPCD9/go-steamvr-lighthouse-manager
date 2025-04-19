@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strings"
+	"time"
 
 	"tinygo.org/x/bluetooth"
 )
@@ -74,7 +75,7 @@ func PreloadBaseStation(config BaseStationConfiguration, wakeUp bool) BaseStatio
 func (lv *LighthouseV2) FindService() {
 	services, err := lv.p.DiscoverServices(nil)
 	if err != nil {
-		lv.Disconnect()
+		lv.Reconnect()
 		log.Printf("Failed to find service: %+v\n", err)
 		return
 	}
@@ -191,11 +192,37 @@ func (lv *LighthouseV2) StartCaching() {
 			lv.updateAvailable = true
 		}
 	}
+
+	go func() {
+		//I really ran out of ideas how to do it better
+
+		for {
+
+			if lv.powerStateCharacteristic == nil {
+				time.Sleep(time.Second)
+				continue
+			}
+			var data []byte = make([]byte, 1)
+			_, err := lv.powerStateCharacteristic.Read(data)
+
+			if err != nil {
+				WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
+				lv.Reconnect()
+				break
+			}
+			time.Sleep(time.Second)
+		}
+	}()
 }
 
 func (lv *LighthouseV2) Reconnect() {
 	lv.p.Disconnect() // Just in case
 
+	lv.identifyCharacteristic = nil
+	lv.modeCharacteristic = nil
+	lv.powerStateCharacteristic = nil
+
+	log.Println("Reconnecting...")
 	parsedMac, err := bluetooth.ParseMAC(lv.mac)
 
 	if err != nil {
@@ -211,6 +238,8 @@ func (lv *LighthouseV2) Reconnect() {
 
 	if err != nil {
 		log.Printf("Failed to reconnect to lighthouse %s: %+v\n", lv.Name, err)
+		time.Sleep(time.Second)
+		lv.Reconnect()
 		return
 	}
 	lv.p = &conn
@@ -221,13 +250,15 @@ func (lv *LighthouseV2) Reconnect() {
 
 func (lv *LighthouseV2) ScanCharacteristics() bool {
 	if lv.service == nil {
-		log.Printf("Lighthouse service on base station %s not found\n", lv.Name)
+		log.Printf("Lighthouse service on base station %s not found, reconnecting...\n", lv.Name)
+		lv.Reconnect()
 		return false
 	}
 
 	characteristics, err := lv.service.DiscoverCharacteristics(nil)
 	if err != nil {
 		lv.p.Disconnect()
+		return false
 	}
 
 	for i := range characteristics {
@@ -255,9 +286,10 @@ func (lv *LighthouseV2) ScanCharacteristics() bool {
 	if lv.ValidLighthouse {
 		lv.Status = "ready"
 		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "ready"))
-
 	}
 
+	lv.mac = lv.p.Address.String()
+	go lv.StartCaching()
 	return lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
 }
 
