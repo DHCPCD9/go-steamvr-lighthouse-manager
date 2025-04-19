@@ -9,6 +9,7 @@ import { useGroupedLighthouses } from "../../../lib/hooks/useGroupedLighthouses"
 import { useLighthouseGroups } from "../../../lib/hooks/useLighthouseGroups";
 import { useLighthouseGroup } from "../../../lib/hooks/useLighthouseGroup";
 import { useDebounce } from "@uidotdev/usehooks"
+import { smoothResize } from "../../utils/windows";
 
 
 export function GroupedBaseStationSettings() {
@@ -60,6 +61,8 @@ export function GroupedBaseStationSettings() {
             if (!group) return push("/");
 
             setItems([{ text: "Devices", link: "/" }, { text: name, link: `/groups/${name}` }, { text: "Settings", link: `/groups/${group.name}/settings` }]);
+
+            await smoothResize(700, 355, 150);
         })()
     }, [groupName]);
 

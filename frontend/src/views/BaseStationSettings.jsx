@@ -23,21 +23,13 @@ export function BaseStationSettingsPage() {
     const { t } = useTranslation();
     const { setItems } = useContainerTitlebar();
 
-
-    useEffect(() => {
-        (async () => {
-            await smoothResize(700, 462, 150);
-        })()
-    }, []);
-
-
     useEffect(() => {
         (async () => {
             if (channelChangeActive) {
                 return await smoothResize(700, 510, 150);
             }
 
-            return await smoothResize(700, 462, 150);
+            return await smoothResize(700, 435, 150);
         })()
     }, [channelChangeActive]);
 

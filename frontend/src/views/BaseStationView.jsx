@@ -28,7 +28,8 @@ export function BaseStationsList() {
 
     useEffect(() => {
         (async () => {
-            await smoothResize(700, 385, 150);
+            await InitBluetooth();
+            await smoothResize(700, 445, 150);
         })()
     }, []);
 
@@ -80,7 +81,7 @@ export function BaseStationsList() {
     return (<div className="flex flex-col gap-2 select-none justify-between">
         <div>
             <AnimatePresence>
-                <div className="flex flex-col gap-[8px] px-[24px] py-[2px] max-h-[252px] overflow-y-auto" key={"base stations"} style={{ scrollbarWidth: 'none' }}>
+                <div className="flex flex-col gap-[8px] px-[24px] py-[2px] h-[352px] overflow-y-auto" key={"base stations"} style={{ scrollbarWidth: 'none' }}>
                 {groups.map((c, v) => (<BaseStationGroup key={`${v}-group`} group={c} />))}
 
                     {baseStations.map((station, index) =>
@@ -106,9 +107,9 @@ export function BaseStationsList() {
                     Create group
                 </button>
             </motion.div> : <>
-                        {baseStations.length + groups.length > 3 && <motion.div className="flex justify-center scale-175 py-1" animate={{ y: 5 }} transition={{ ease: "linear", duration: 2, repeat: Infinity, repeatType: "reverse" }}>
+                        {/* {baseStations.length + groups.length > 3 && <motion.div className="flex justify-center scale-175 py-1" animate={{ y: 5 }} transition={{ ease: "linear", duration: 2, repeat: Infinity, repeatType: "reverse" }}>
                 <ChevronIcon />
-            </motion.div>}
+            </motion.div>} */}
             </>}
             
             </AnimatePresence>
