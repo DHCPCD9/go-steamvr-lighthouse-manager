@@ -29,7 +29,7 @@ export function BaseStationsList() {
     useEffect(() => {
         (async () => {
             await InitBluetooth();
-            await smoothResize(700, 445, 150);
+            await smoothResize(700, 450, 150);
         })()
     }, []);
 
@@ -81,7 +81,7 @@ export function BaseStationsList() {
     return (<div className="flex flex-col gap-2 select-none justify-between">
         <div>
             <AnimatePresence>
-                <div className="flex flex-col gap-[8px] px-[24px] py-[2px] h-[352px] overflow-y-auto" key={"base stations"} style={{ scrollbarWidth: 'none' }}>
+                <div className="flex flex-col gap-[8px] px-[24px] py-[2px] h-[335px] overflow-y-auto" key={"base stations"} style={{ scrollbarWidth: 'none' }}>
                 {groups.map((c, v) => (<BaseStationGroup key={`${v}-group`} group={c} />))}
 
                     {baseStations.map((station, index) =>

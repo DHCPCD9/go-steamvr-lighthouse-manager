@@ -102,16 +102,16 @@ export const WebsocketProvider = ({ children }) => {
         (async () => {
             socket = new WebSocket("ws://localhost:15065/api/lighthouse/websocket")
 
-            socket.onopen = () => setState((state) => {
-                state.websocket.ready = true
-
-                return state;
-            });
-            socket.onclose = () => setState((state) => {
-                state.websocket.ready = false
-
-                return state;
-            });
+            socket.onopen = () => {
+                setState((state) => {
+                    return {...state, websocket: { ready: true }};
+                });
+            }
+            socket.onclose = () => {
+                setState((state) => {
+                    return {...state, websocket: { ready: false }};
+                });
+            }
             socket.onmessage = (e) => {
                 handleMessage(JSON.parse(e.data));
             };

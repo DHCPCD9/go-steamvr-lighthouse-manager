@@ -111,6 +111,9 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 
 	if err != nil {
 		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
+
+		time.Sleep(time.Second)
+		connectToPreloadedBaseStation(bs, config, wakeUp, attemp+1)
 		return
 	}
 
@@ -216,8 +219,6 @@ func (lv *LighthouseV2) StartCaching() {
 }
 
 func (lv *LighthouseV2) Reconnect() {
-	lv.p.Disconnect() // Just in case
-
 	lv.identifyCharacteristic = nil
 	lv.modeCharacteristic = nil
 	lv.powerStateCharacteristic = nil
@@ -286,6 +287,8 @@ func (lv *LighthouseV2) ScanCharacteristics() bool {
 	if lv.ValidLighthouse {
 		lv.Status = "ready"
 		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "ready"))
+		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", lv.readChannel()))
+		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", lv.readPowerState()))
 	}
 
 	lv.mac = lv.p.Address.String()
@@ -417,5 +420,29 @@ func (lv *LighthouseV2) readPowerState() int {
 		return lv.readPowerState()
 	}
 
+	lv.CachedPowerState = int(data[0])
+	return int(data[0])
+}
+
+func (lv *LighthouseV2) readChannel() int {
+	if lv.modeCharacteristic == nil {
+		return -1
+	}
+
+	var data []byte = make([]byte, 1)
+	_, err := lv.modeCharacteristic.Read(data)
+
+	if err != nil {
+		log.Printf("Failed to read channel on %s: %+v\n", lv.Id, err)
+		lv.Reconnect()
+		return lv.readChannel()
+	}
+
+	lv.CachedChannel = int(data[0])
+
+	if config != nil && config.KnownBaseStations[lv.Id] != nil && config.KnownBaseStations[lv.Id].LastChannel != lv.CachedChannel {
+		config.KnownBaseStations[lv.Id].LastChannel = lv.CachedChannel
+		config.Save()
+	}
 	return int(data[0])
 }

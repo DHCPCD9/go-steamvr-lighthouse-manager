@@ -67,12 +67,6 @@ export function BaseStationSettingsPage() {
 
     if (!lighthouse) return <></>
     return (<div className="flex flex-col gap-2 select-none">
-        {/* <div className="text-white py-[12px] px-[24px] text-[24px] poppins-medium flex flex-row gap-[12px] items-center">
-            <ContainerTitleBar items={[t("Devices"), matches.id]} beforeExit={() => {
-            UpdateBaseStationParam(lighthouse.id, "nickname", nickname.trim() ? nickname : lighthouse.id);
-            }} />
-        </div> */}
-
         <div className="text-white poppins-regular px-[24px]">
             <InputOption maxLength={16} key={"nickname"} title={t("Nickname")} description={t("Base station nickname to display")} placeholder={lighthouse && lighthouse.id} value={lighthouse.name} setValue={setNickname} />
         </div>
