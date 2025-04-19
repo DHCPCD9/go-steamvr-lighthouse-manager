@@ -25,7 +25,7 @@ export function TitleBar() {
     const bulkUpdate = async (state, flags) => {
         
         for(const baseStation of lighthouses) {
-            if (!((baseStation.managed_flags & flags) > 0)) continue;
+            if (flags && !((baseStation.managed_flags & flags) > 0)) continue;
             await ChangeBaseStationPowerStatus(baseStation.id, state);
         }
     }
@@ -50,7 +50,7 @@ export function TitleBar() {
 
   
     const toggleAllBaseStations = async () => {
-        let status = [...lighthouses.map(c => c.PowerState)][0];
+        let status = [...lighthouses.map(c => c.power_state)][0];
 
         if (!status) {
             console.log("Waking up everything");
@@ -97,7 +97,6 @@ export function TitleBar() {
 
             </AnimatePresence>
             <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25" onClick={toggleAllBaseStations}>
-                {/* <PowerStatusIcon width={14} height={14} class={`fill-[#C6C6C6]`} /> */}
                 <PowerCircle color="#C6C6C6"/>
             </button>
             <button onClick={(c) => route("/settings", true)}>
