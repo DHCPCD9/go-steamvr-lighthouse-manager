@@ -3,6 +3,10 @@ package main
 import (
 	"embed"
 	"log"
+	"strings"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/wailsapp/wails/v2/pkg/application"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -45,6 +49,13 @@ func main() {
 			app,
 		},
 	})
+
+	if strings.Contains(VERSION_FLAGS, "MEMORY_PROFILING") {
+		go func() {
+			log.Println(http.ListenAndServe(":6060", nil))
+		}()
+	}
+
 	err := mainApp.Run()
 
 	if err != nil {

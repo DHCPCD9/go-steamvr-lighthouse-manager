@@ -62,8 +62,9 @@ func (a *App) startup(ctx context.Context) {
 		defer f.Close()
 
 		log.SetOutput(f)
-
 	}
+
+	log.Printf("Version flags: %s\n", VERSION_FLAGS)
 
 	a.ctx = ctx
 
@@ -84,7 +85,6 @@ func (a *App) startup(ctx context.Context) {
 	}()
 
 	config = GetConfiguration()
-	a.InitBluetooth()
 	go a.preloadBaseStations()
 
 	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
@@ -331,33 +331,42 @@ func (a *App) ToggleTray() Configuration {
 	return *config
 }
 
+func (a *App) bluetoothCallback(adapter *bluetooth.Adapter, sr bluetooth.ScanResult) {
+
+	if !strings.HasPrefix(sr.LocalName(), "LHB-") {
+		return
+	}
+
+	log.Println(sr.LocalName())
+
+	go ScanCallback(a, adapter, sr)
+}
+
+func (a *App) StartScanFor10Seconds() {
+	log.Println("Starting scan for 10 seconds...")
+	go adapter.Scan(a.bluetoothCallback)
+	time.Sleep(time.Second * 10)
+	log.Println("Stopping scan")
+	adapter.StopScan()
+}
+
 func (a *App) InitBluetooth() bool {
 
 	if a.bluetoothInitFinished {
 		return true
 	}
 
-	adapter.SetConnectHandler(func(device bluetooth.Device, connected bool) {
-		log.Printf("Connection: %s; connected=%+v\n", device.Address, connected)
-	})
-
 	if err := adapter.Enable(); err != nil {
 		return false
 	}
 
-	go adapter.Scan(func(adapter *bluetooth.Adapter, sr bluetooth.ScanResult) {
-		go ScanCallback(a, adapter, sr)
-	})
+	go a.StartScanFor10Seconds()
 
 	a.bluetoothInitFinished = true
 	return true
 }
 
 func ScanCallback(app *App, a *bluetooth.Adapter, sr bluetooth.ScanResult) {
-
-	if !strings.HasPrefix(sr.LocalName(), "LHB-") {
-		return
-	}
 
 	_, found := knownBaseStations.Get(sr.LocalName())
 

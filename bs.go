@@ -196,26 +196,26 @@ func (lv *LighthouseV2) StartCaching() {
 		}
 	}
 
-	go func() {
-		//I really ran out of ideas how to do it better
+	// go func() {
+	// 	//I really ran out of ideas how to do it better
+	// 	var data []byte = make([]byte, 1)
+	// 	var err error
+	// 	for {
 
-		for {
+	// 		if lv.powerStateCharacteristic == nil {
+	// 			time.Sleep(time.Second)
+	// 			continue
+	// 		}
+	// 		_, err = lv.powerStateCharacteristic.Read(data)
 
-			if lv.powerStateCharacteristic == nil {
-				time.Sleep(time.Second)
-				continue
-			}
-			var data []byte = make([]byte, 1)
-			_, err := lv.powerStateCharacteristic.Read(data)
-
-			if err != nil {
-				WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
-				lv.Reconnect()
-				break
-			}
-			time.Sleep(time.Second)
-		}
-	}()
+	// 		if err != nil {
+	// 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
+	// 			lv.Reconnect()
+	// 			break
+	// 		}
+	// 		time.Sleep(time.Second)
+	// 	}
+	// }()
 }
 
 func (lv *LighthouseV2) Reconnect() {
