@@ -87,7 +87,8 @@ export function SoftwareSettings() {
         de: "Deutsch",
         kr: "한국어",
         jp: "日本語",
-        ua: "Українська"
+        ua: "Українська",
+        pt_br: "Português-BR"
     }
 
     const languages = Object.keys(i18n.store.data);
