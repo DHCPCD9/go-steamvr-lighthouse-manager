@@ -1,15 +1,17 @@
 import { useRouter } from "preact-router"
-import { useContainerTitlebar } from "../../../lib/stores/titlebar.store";
+import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
 import { useEffect, useState } from "preact/hooks";
 import { BaseStation } from "../../components/BaseStation";
 import { AnimatePresence, motion } from 'framer-motion'
-import { useGroupedLighthouses } from "../../../lib/hooks/useGroupedLighthouses";
+import { useGroupedLighthouses } from "@hooks/useGroupedLighthouses";
 import { smoothResize } from "../../utils/windows";
 
 
 export function GroupedBaseStationView() {
 
     const [{ matches }, push] = useRouter();
+
+    if (!matches || !matches.name) return push("/");
     const { setItems } = useContainerTitlebar();
     const baseStations = useGroupedLighthouses(matches.name);
 
@@ -17,9 +19,9 @@ export function GroupedBaseStationView() {
 
 
     useEffect(() => {
-        setItems([{ text: "Devices", link: "/" }, { text: matches.name, link: `/groups/${matches.name}` }]);
+        setItems([{ text: "Devices", link: "/" }, { text: matches.name!, link: `/groups/${matches.name}` }]);
         (async () => {
-            await smoothResize(700, 445, 150);
+            await smoothResize(700, 445);
         })()
     }, []);
     return (<div className="flex flex-col gap-2 select-none justify-between  px-[24px]" key={"base stations"} style={{ scrollbarWidth: 'none' }}>

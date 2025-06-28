@@ -1,19 +1,21 @@
 import { BaseStationIcon } from "../assets/basestation";
 import { motion, AnimatePresence } from "framer-motion"
 
-import VisibilityIcon from "../assets/icons/VisibilityIcon";
 import { useMemo, useState } from "preact/hooks";
-import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "../../wailsjs/go/main/App";
+import { ChangeBaseStationPowerStatus, IdentitifyBaseStation } from "@src/lib/native/index";
 import { StatusCircleIcon } from "../assets/icons/StatusCircleIcon";
-import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { route } from "preact-router";
 import { useTranslation } from "react-i18next";
-import { TitleBarSettingsIcon } from "../assets/icons/TitleBarSettingsIcon";
-import { ChevronRightIcon, CirclePower, Eye, Power, Settings } from "lucide-preact";
-export function BaseStation({ station, onSelect, selected }) {
+import { ChevronRightIcon, CirclePower, Eye } from "lucide-preact";
+import type { LighthouseStation } from "@src/lib/types/index";
+import { useWebsocketCommunication } from "@src/lib/hooks/useWebsocketCommunication";
+
+
+export function BaseStation({ station, onSelect, selected }: { station: LighthouseStation, onSelect?: () => void, selected: boolean }) {
 
     const isAwoke = [0x0B, 0x01, 0x09].includes(station.power_state);
-
+    const send = useWebsocketCommunication();
+ 
     const [identitfyDisabled, setIdentitfyhDisabled] = useState(false);
     const identitify = async () => {
 
@@ -31,13 +33,12 @@ export function BaseStation({ station, onSelect, selected }) {
     const updatePowerState = async () => {
         if (isAwoke) {
             //Sleeping of
-            let result = await ChangeBaseStationPowerStatus(station.id, "sleep");
-            if (result != "ok") return alert(result);
+            let result = await ChangeBaseStationPowerStatus(send, station.id, "sleep");
             return;
         }
 
         //Waking it up
-        await ChangeBaseStationPowerStatus(station.id, "awake");
+        await ChangeBaseStationPowerStatus(send, station.id, "awake");
     }
 
     const { t } = useTranslation();
@@ -51,10 +52,9 @@ export function BaseStation({ station, onSelect, selected }) {
         return isAwoke ? "awoke" : "sleep"
     }, [station.power_state, station.status])
 
-
     return (<div className={`text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] data-[selected="true"]:bg-[#434343] duration-200 cursor-pointer active:bg-[#1F1F1F]!`} data-selected={selected}>
         <div className="flex flex-row gap-[16px] items-center" onClick={() => {
-            onSelect();
+            if (onSelect) onSelect();
         }}>
             <BaseStationIcon />
             <div className="flex flex-col gap-[2px] text-[14px]">

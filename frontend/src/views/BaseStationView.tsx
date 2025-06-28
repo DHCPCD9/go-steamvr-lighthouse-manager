@@ -2,24 +2,24 @@ import { BaseStation } from "../components/BaseStation";
 import { useContext, useEffect, useState } from 'preact/hooks'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Copy, Loader, Loader2Icon } from "lucide-preact";
-import { AddBaseStationToGroup, CreateGroup, GetConfiguration, InitBluetooth } from "../../wailsjs/go/main/App";
+import { AddBaseStationToGroup, CreateGroup, GetConfiguration, InitBluetooth } from "@src/lib/native/index";
 import { smoothResize } from "../utils/windows";
 import { ContainerTitleBar } from "../components/ContainerTitleBar";
 import { Trans, useTranslation } from "react-i18next";
 import { ChevronIcon } from "../assets/icons/ChevronIcon";
-import { useContainerTitlebar } from "../../lib/stores/titlebar.store";
+import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
 import { useRouter } from "preact-router";
 import { deepEqual } from "../utils/arrays";
 import { BaseStationGroup } from "../components/BaseStationGroups";
-import { useLighthouses } from "../../lib/hooks/useLighthouses";
-import { WebsocketContext } from "../../lib/context/websocket.context";
-import { useLighthouseGroups } from "../../lib/hooks/useLighthouseGroups";
+import { useLighthouses } from "@hooks/useLighthouses";
+import { useLighthouseGroups } from "@hooks/useLighthouseGroups";
+import { useConfig } from "@src/lib/hooks/useConfig";
 export function BaseStationsList() {
 
     const [searching, setSearching] = useState(false);
     const baseStations = useLighthouses();
     const groups = useLighthouseGroups();
-
+    const config = useConfig();
     const [, push] = useRouter();
     const [selectedBaseStations, setSelectedBaseStation] = useState([]);
     const { setItems, setCallbackOnLast } = useContainerTitlebar();
@@ -29,7 +29,7 @@ export function BaseStationsList() {
     useEffect(() => {
         (async () => {
             await InitBluetooth();
-            await smoothResize(700, 450, 150);
+            await smoothResize(700, 450);
         })()
     }, []);
 
@@ -41,11 +41,11 @@ export function BaseStationsList() {
     }
 
     const groupBaseStations = async () => {
-        let config = await GetConfiguration();
 
         let newName = "New Group"
         let i = 0;
 
+        
         for (const group of Object.keys(config.groups)) {
             if (group == newName + (i > 0 ? `(${i + 1})` : "")) {
                 i++;
@@ -71,7 +71,7 @@ export function BaseStationsList() {
             setCallbackOnLast(() => {
                 setSelectedBaseStation([]);
             })
-            return setItems(["Devices", `${selectedBaseStations.length} Selected`])
+            return setItems([{ text: "Devices", link: "/" }, { text: `${selectedBaseStations.length} Selected`, link: "/" }])
         }
 
         setItems([{ text: "Devices", link: "/" }])

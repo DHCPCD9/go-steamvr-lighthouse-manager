@@ -112,3 +112,7 @@
 body {
     overflow: hidden;
 }
+
+*[data-draggable="true"] {
+  app-region: drag;
+}

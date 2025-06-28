@@ -27,9 +27,12 @@ func StartHttp() {
 
 	// defer BASESTATION_FOUND.Close()
 	// defer BASESTATION_UPDATE.Close()
-	// defer CONFIGURATION_UPDATE.Close()
+	defer STEAMVR_AVAILABLE.Close()
 	defer WEBSOCKET_BROADCAST.Close()
 
+	if v, err := isProcRunning("vrserver.exe"); err == nil {
+		PREVIOUS_STEAMVR_VALUE = v
+	}
 	log.Fatal(http.ListenAndServe(":15065", nil))
 
 }
@@ -67,6 +70,9 @@ func waitForSteamVR() {
 
 				if PREVIOUS_STEAMVR_VALUE != isSteamVRLaunched {
 					PREVIOUS_STEAMVR_VALUE = isSteamVRLaunched
+					WEBSOCKET_BROADCAST.Broadcast(preparePacket("steamvr.status", map[string]interface{}{
+						"status": PREVIOUS_STEAMVR_VALUE,
+					}))
 
 				}
 
@@ -124,7 +130,12 @@ func reader(conn *websocket.Conn) {
 		conn.WriteJSON(preparePacket("groups.created", v))
 	}
 
-	conn.WriteJSON(preparePacket("config.configure", config))
+	conn.WriteJSON(preparePacket("client.configure", config))
+	conn.WriteJSON(preparePacket("client.platform", map[string]interface{}{
+		"system":  runtime.GOOS,
+		"flags":   VERSION_FLAGS,
+		"version": BINARY_VERSION,
+	}))
 	conn.WriteJSON(preparePacket("steamvr.status", map[string]interface{}{
 		"status": PREVIOUS_STEAMVR_VALUE,
 	}))
@@ -135,6 +146,7 @@ func reader(conn *websocket.Conn) {
 
 			data := <-listener.Ch()
 
+			log.Printf("Sending json: %s\n", data)
 			err := conn.WriteJSON(data)
 
 			if err != nil {
@@ -145,17 +157,18 @@ func reader(conn *websocket.Conn) {
 
 }
 
-func prepareIdWithFieldPacket(lighthouse string, packetType string, fieldName string, fieldValue interface{}) interface{} {
-	return preparePacket(packetType, map[string]interface{}{
-		"id":      lighthouse,
-		fieldName: fieldValue,
+func prepareIdWithFieldPacket(lighthouse string, _ string, fieldName string, fieldValue interface{}) interface{} {
+	return preparePacket("lighthouse.update", map[string]interface{}{
+		"id":         lighthouse,
+		"field_name": fieldName,
+		"value":      fieldValue,
 	})
 }
 
 func preparePacket(packetType string, body interface{}) interface{} {
 
 	return map[string]interface{}{
-		"packet_type": packetType,
-		"data":        body,
+		"event": packetType,
+		"data":  body,
 	}
 }

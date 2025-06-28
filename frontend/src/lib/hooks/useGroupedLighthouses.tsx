@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "preact/hooks"
 import { WebsocketContext } from "../context/websocket.context"
 
 
-export const useGroupedLighthouses = (groupName) => {
+export const useGroupedLighthouses = (groupName: string) => {
 
     const { groups, lighthouses } = useContext(WebsocketContext);
 

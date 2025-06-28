@@ -1,13 +1,12 @@
 import { useEffect, useState } from "preact/hooks";
-import { GetConfiguration, GetFoundBaseStations, RenameGroup, UpdateGroupManagedFlags } from "../../../wailsjs/go/main/App";
+import { RenameGroup, UpdateGroupManagedFlags } from "@src/lib/native/index";
 import { Link, useRouter } from "preact-router";
-import { useContainerTitlebar } from "../../../lib/stores/titlebar.store";
+import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
 import { InputOption } from "../../components/Input";
 import { useTranslation } from "react-i18next";
 import { CheckboxOption } from "../../components/CheckboxOption";
-import { useGroupedLighthouses } from "../../../lib/hooks/useGroupedLighthouses";
-import { useLighthouseGroups } from "../../../lib/hooks/useLighthouseGroups";
-import { useLighthouseGroup } from "../../../lib/hooks/useLighthouseGroup";
+import { useGroupedLighthouses } from "@hooks/useGroupedLighthouses";
+import { useLighthouseGroup } from "@hooks/useLighthouseGroup";
 import { useDebounce } from "@uidotdev/usehooks"
 import { smoothResize } from "../../utils/windows";
 
@@ -17,21 +16,19 @@ export function GroupedBaseStationSettings() {
 
     const [{ matches }, push] = useRouter();
 
-    const [name, setName] = useState(matches.name);
+
+    if (!matches) return push("/");
+    const [name, setName] = useState(matches.name!);
     
     const { setItems } = useContainerTitlebar();
     const baseStations = useGroupedLighthouses(name);
     const group = useLighthouseGroup(matches.name);
     const { t } = useTranslation();
     const groupName = useDebounce(name, 1000);
-
     
     useEffect(() => {
 
         (async () => {
-            console.log(groupName)
-
-            if (name == groupName) return;
             await RenameGroup(name, groupName);
             setName(groupName);
             await push(`/groups/${groupName}/settings`, true);
@@ -40,7 +37,7 @@ export function GroupedBaseStationSettings() {
 
 
 
-    const UpdateManageFlags = async (flag) => {
+    const UpdateManageFlags = async (flag: number) => {
 
         if ((group.managed_flags & flag) > 0) {
             await UpdateGroupManagedFlags(group.name, group.managed_flags & ~flag)
@@ -51,7 +48,7 @@ export function GroupedBaseStationSettings() {
 
     }
 
-    const deleteGroup = async (e) => {
+    const deleteGroup = async (e: Event) => {
 
     }
 
@@ -62,13 +59,13 @@ export function GroupedBaseStationSettings() {
 
             setItems([{ text: "Devices", link: "/" }, { text: name, link: `/groups/${name}` }, { text: "Settings", link: `/groups/${group.name}/settings` }]);
 
-            await smoothResize(700, 355, 150);
+            await smoothResize(700, 355);
         })()
     }, [groupName]);
 
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white poppins-regular px-[24px]">
-            <InputOption maxLength={16} key={"nickname"} title={t("Group name")} description={t("Display group name.")} value={name} setValue={(e) => setName(e)} />
+            <InputOption maxLength={16} key={"nickname"} title={t("Group name")} description={t("Display group name.")} value={name} setValue={(e: any) => setName(e)} />
         </div>
 
         <div className="text-white poppins-regular px-[24px]">

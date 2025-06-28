@@ -74,6 +74,10 @@ export function SleepAllBaseStations() {
   return window['go']['main']['App']['SleepAllBaseStations']();
 }
 
+export function StartScanFor10Seconds() {
+  return window['go']['main']['App']['StartScanFor10Seconds']();
+}
+
 export function ToggleSteamVRManagement() {
   return window['go']['main']['App']['ToggleSteamVRManagement']();
 }
