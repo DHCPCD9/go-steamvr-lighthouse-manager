@@ -81,27 +81,19 @@ export interface SteamVRStatusUpdatePayload extends WebsocketPayloadBase {
 }
 
 export interface GroupAddedPayload extends WebsocketPayloadBase {
-  event: 'groups.created',
-  data: LighthouseGroup
+  event: 'group.create',
+  data: LighthouseGroup,
+  id: string
 }
 
 
 export interface GroupRenamePayload extends WebsocketPayloadBase {
   event: 'group.rename',
   data: {
-    old_name: string,
-    new_name: string
+    id: string,
+    name: string
   }
 }
-
-export interface GroupRenamePayload extends WebsocketPayloadBase {
-  event: 'group.rename',
-  data: {
-    old_name: string,
-    new_name: string
-  }
-}
-
 
 export interface GroupLighthousesAdded extends WebsocketPayloadBase {
   event: 'groups.lighthouses.added',
@@ -114,10 +106,18 @@ export interface GroupLighthousesAdded extends WebsocketPayloadBase {
 export interface GroupsUpdatedFlagsPayload extends WebsocketPayloadBase {
   event: 'group.update.flags',
   data: {
-    name: string;
+    id: string;
     flags: number;
   }
 }
+
+export interface GroupRemovePayload extends WebsocketPayloadBase {
+  event: 'group.delete',
+  data: {
+    id: string;
+  }
+}
+
 
 
 export type WebsocketPayload =
@@ -128,6 +128,7 @@ export type WebsocketPayload =
   | GroupRenamePayload
   | GroupLighthousesAdded
   | GroupsUpdatedFlagsPayload
+  | GroupRemovePayload
   | LighthouseFoundPayload
   | LighthouseUpdatePayload;
 

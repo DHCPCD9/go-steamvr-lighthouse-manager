@@ -5,6 +5,7 @@ import { BaseStation } from "../../components/BaseStation";
 import { AnimatePresence, motion } from 'framer-motion'
 import { useGroupedLighthouses } from "@hooks/useGroupedLighthouses";
 import { smoothResize } from "../../utils/windows";
+import { useLighthouseGroup } from "@src/lib/hooks/useLighthouseGroup";
 
 
 export function GroupedBaseStationView() {
@@ -14,12 +15,14 @@ export function GroupedBaseStationView() {
     if (!matches || !matches.name) return push("/");
     const { setItems } = useContainerTitlebar();
     const baseStations = useGroupedLighthouses(matches.name);
+    const group = useLighthouseGroup(matches.name);
 
 
+    if (!group) return push("/");
 
 
     useEffect(() => {
-        setItems([{ text: "Devices", link: "/" }, { text: matches.name!, link: `/groups/${matches.name}` }]);
+        setItems([{ text: "Devices", link: "/" }, { text: group.name!, link: `/groups/${matches.name}` }]);
         (async () => {
             await smoothResize(700, 445);
         })()

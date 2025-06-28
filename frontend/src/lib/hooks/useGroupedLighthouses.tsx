@@ -8,5 +8,7 @@ export const useGroupedLighthouses = (groupName: string) => {
 
     if (!groups[groupName]) return [];
     let group = groups[groupName];
-    return Object.values(lighthouses).filter(c => group.base_stations.includes(c.id))
+
+    if (!group) return [];
+    return Object.values(lighthouses).filter((c) => c && group.base_stations.includes(c.id))
 }

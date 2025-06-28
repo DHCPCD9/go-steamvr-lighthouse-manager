@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { RenameGroup, UpdateGroupManagedFlags } from "@src/lib/native/index";
+import { RemoveGroup, RenameGroup, UpdateGroupManagedFlags } from "@src/lib/native/index";
 import { Link, useRouter } from "preact-router";
 import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
 import { InputOption } from "../../components/Input";
@@ -11,27 +11,27 @@ import { useDebounce } from "@uidotdev/usehooks"
 import { smoothResize } from "../../utils/windows";
 
 
-export function GroupedBaseStationSettings() {
 
+export function GroupedBaseStationSettings() {
 
     const [{ matches }, push] = useRouter();
 
-
     if (!matches) return push("/");
-    const [name, setName] = useState(matches.name!);
     
     const { setItems } = useContainerTitlebar();
-    const baseStations = useGroupedLighthouses(name);
     const group = useLighthouseGroup(matches.name);
+    const [name, setName] = useState(group?.name??"");
+
     const { t } = useTranslation();
     const groupName = useDebounce(name, 1000);
     
     useEffect(() => {
 
         (async () => {
-            await RenameGroup(name, groupName);
+
+            if (name == group.name) return;
+            await RenameGroup(matches.name, groupName);
             setName(groupName);
-            await push(`/groups/${groupName}/settings`, true);
         })()
     }, [groupName]);
 
@@ -49,7 +49,9 @@ export function GroupedBaseStationSettings() {
     }
 
     const deleteGroup = async (e: Event) => {
+        await RemoveGroup(matches.name);
 
+        await push("/");
     }
 
 
@@ -57,7 +59,7 @@ export function GroupedBaseStationSettings() {
         (async () => {
             if (!group) return push("/");
 
-            setItems([{ text: "Devices", link: "/" }, { text: name, link: `/groups/${name}` }, { text: "Settings", link: `/groups/${group.name}/settings` }]);
+            setItems([{ text: "Devices", link: "/" }, { text: group.name, link: `/groups/${matches.name}` }, { text: "Settings", link: `/groups/${matches.name}/settings` }]);
 
             await smoothResize(700, 355);
         })()

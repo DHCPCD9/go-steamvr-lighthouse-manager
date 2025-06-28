@@ -99,20 +99,28 @@ func (a *App) startup(ctx context.Context) {
 
 }
 
-func (a *App) CreateGroup(name string) string {
+func (a *App) CreateGroup(name string, baseStations []string) string {
 	if config.Groups[name] != nil {
 		return "error: Already exists"
 	}
-	config.CreateGroup(name)
+	id, group := config.CreateGroup(name)
 
-	newGroup := config.Groups[name]
+	for _, v := range baseStations {
+		config.Groups[id].BaseStationIDs = append(config.Groups[id].BaseStationIDs, v)
+	}
 
-	WEBSOCKET_BROADCAST.Broadcast(preparePacket("groups.created", newGroup))
-	return "ok"
+	config.Save()
+
+	WEBSOCKET_BROADCAST.Broadcast(map[string]interface{}{
+		"event": "group.create",
+		"data":  group,
+		"id":    id,
+	})
+	return id
 }
 
-func (a *App) AddBaseStationToGroup(name string, station string) string {
-	if config.Groups[name] == nil {
+func (a *App) AddBaseStationToGroup(id string, station string) string {
+	if config.Groups[id] == nil {
 		return "error: Unknown group"
 	}
 
@@ -124,36 +132,30 @@ func (a *App) AddBaseStationToGroup(name string, station string) string {
 
 	baseStation := *bs
 
-	if slices.Contains(config.Groups[name].BaseStationIDs, baseStation.GetId()) {
+	if slices.Contains(config.Groups[id].BaseStationIDs, baseStation.GetId()) {
 		return "error: already in collection"
 	}
 
-	config.UpdateGroupValue(name, "base_stations", append(config.Groups[name].BaseStationIDs, baseStation.GetId()))
+	config.UpdateGroupValue(id, "base_stations", append(config.Groups[id].BaseStationIDs, baseStation.GetId()))
 	WEBSOCKET_BROADCAST.Broadcast(preparePacket("groups.lighthouses.added", map[string]interface{}{
 		"id":    baseStation.GetId(),
-		"group": name,
+		"group": id,
 	}))
 
 	return "ok"
 }
 
-func (a *App) RenameGroup(name string, newName string) string {
+func (a *App) RenameGroup(id string, newName string) string {
 
-	if config.Groups[name] == nil {
+	if config.Groups[id] == nil {
 		return "error: Unknown group"
 	}
 
-	group := config.Groups[name]
-	config.Groups[newName] = &Group{
-		Name:           newName,
-		ManagedFlags:   group.ManagedFlags,
-		BaseStationIDs: group.BaseStationIDs,
-	}
+	config.Groups[id].Name = newName
 
-	log.Println(config.Groups[newName])
 	WEBSOCKET_BROADCAST.Broadcast(preparePacket("group.rename", map[string]interface{}{
-		"old_name": name,
-		"new_name": newName,
+		"id":   id,
+		"name": newName,
 	}))
 
 	config.Save()
@@ -161,18 +163,33 @@ func (a *App) RenameGroup(name string, newName string) string {
 	return "ok"
 }
 
-func (a *App) UpdateGroupManagedFlags(name string, managed_flags int) string {
+func (a *App) RemoveGroup(id string) {
+
+	if config.Groups[id] == nil {
+		return
+	}
+
+	delete(config.Groups, id)
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("group.delete", map[string]interface{}{
+		"id": id,
+	}))
+
+	config.Save()
+
+}
+
+func (a *App) UpdateGroupManagedFlags(id string, managed_flags int) string {
 
 	log.Println(config.Groups)
-	if config.Groups[name] == nil {
+	if config.Groups[id] == nil {
 		return "error: Unknown group"
 	}
 
-	config.Groups[name].ManagedFlags = managed_flags
+	config.Groups[id].ManagedFlags = managed_flags
 	config.Save()
 
 	WEBSOCKET_BROADCAST.Broadcast(preparePacket("group.update.flags", map[string]interface{}{
-		"name":  name,
+		"id":    id,
 		"flags": managed_flags,
 	}))
 

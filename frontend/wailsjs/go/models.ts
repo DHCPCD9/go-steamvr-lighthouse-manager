@@ -64,6 +64,7 @@ export namespace main {
 	    tray_notified: boolean;
 	    known_base_stations: Record<string, BaseStationConfiguration>;
 	    groups: Record<string, Group>;
+	    branch: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Configuration(source);
@@ -77,6 +78,7 @@ export namespace main {
 	        this.tray_notified = source["tray_notified"];
 	        this.known_base_stations = this.convertValues(source["known_base_stations"], BaseStationConfiguration, true);
 	        this.groups = this.convertValues(source["groups"], Group, true);
+	        this.branch = source["branch"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

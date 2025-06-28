@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"runtime"
@@ -126,8 +127,12 @@ func reader(conn *websocket.Conn) {
 		}))
 	}
 
-	for _, v := range config.Groups {
-		conn.WriteJSON(preparePacket("groups.created", v))
+	for k, v := range config.Groups {
+		conn.WriteJSON(map[string]interface{}{
+			"event": "group.create",
+			"data":  v,
+			"id":    k,
+		})
 	}
 
 	conn.WriteJSON(preparePacket("client.configure", config))
@@ -146,7 +151,8 @@ func reader(conn *websocket.Conn) {
 
 			data := <-listener.Ch()
 
-			log.Printf("Sending json: %s\n", data)
+			dataSerialized, _ := json.Marshal(data)
+			log.Printf("Sending json: %s\n", dataSerialized)
 			err := conn.WriteJSON(data)
 
 			if err != nil {

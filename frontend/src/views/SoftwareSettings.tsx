@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import { useContainerTitlebar } from '@src/lib/stores/titlebar.store.ts';
 import { useConfig } from '@src/lib/hooks/useConfig';
 import { usePlatform } from '@src/lib/hooks/usePlatform';
+import { Link } from 'preact-router';
 
 export function SoftwareSettings() {
 
@@ -23,7 +24,7 @@ export function SoftwareSettings() {
     const [updateText, setUpdateText] = useState(t("Check")); // I think there is better way to do it, but it works anyways
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { setItems, setCallbackOnLast } = useContainerTitlebar();
-    
+
 
     useEffect(() => {
         (async () => {
@@ -53,7 +54,7 @@ export function SoftwareSettings() {
 
         if (version != onlineVersion) {
             await ForceUpdate();
-            
+
             return;
         }
 
@@ -63,7 +64,7 @@ export function SoftwareSettings() {
         setTimeout(() => {
             setUpdateText(t("Check"));
         }, 1500);
-    } 
+    }
 
     const toggleAllowTray = async () => {
         await UpdateConfigValue("allow_tray", !config.allow_tray);
@@ -80,7 +81,7 @@ export function SoftwareSettings() {
         }
         setUpdateText(t("Check"));
     }, [i18n.language, isUpdatingSupported]);
-    
+
     const languageNames = {
         en: "English",
         ru: "Русский",
@@ -95,7 +96,7 @@ export function SoftwareSettings() {
     const languages = Object.keys(i18n.store.data);
 
     useEffect(() => {
-        setItems([{ text: "SteamVR LM", link: "/" }, { text: t("Settings"), link: "/settings"}])
+        setItems([{ text: "SteamVR LM", link: "/" }, { text: t("Settings"), link: "/settings" }])
     }, [i18n.language])
     return (<div className="poppins-semibold text-white py-[12px] px-[24px] select-none">
         {/* <ContainerTitleBar items={["SteamVR LM", t("Settings")]}/> */}
@@ -103,9 +104,9 @@ export function SoftwareSettings() {
         <div className='flex flex-col gap-[8px] w-full pt-[8px]'>
 
             <DropdownOption title={t("Language")} description={t("Language of the interface")} setValue={i18n.changeLanguage} value={{ title: languageNames[i18n.language], value: i18n.language }} items={languages.filter(c => c != "cimode").map(c => {
-                return { title: languageNames[c]??c, value: c }
-            })} open={dropdownOpen} setOpen={setDropdownOpen} lockedValues={[]}/>
-            
+                return { title: languageNames[c] ?? c, value: c }
+            })} open={dropdownOpen} setOpen={setDropdownOpen} lockedValues={[]} />
+
             <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] p-[16px] rounded-[6px]'>
                 <div>
                     <div className='flex flex-col'>
@@ -118,7 +119,7 @@ export function SoftwareSettings() {
                     </div>
                 </div>
                 <div>
-                    <Checkbox disabled={!steamVRAvailable || !config?.is_steamvr_installed} value={config?.is_steamvr_managed} SetValue={togglePowerManagement}/>
+                    <Checkbox disabled={!steamVRAvailable || !config?.is_steamvr_installed} value={config?.is_steamvr_managed} SetValue={togglePowerManagement} />
                 </div>
             </div>
 
@@ -134,11 +135,25 @@ export function SoftwareSettings() {
                     </div>
                 </div>
                 <div>
-                    <Checkbox value={config?.allow_tray??false} SetValue={toggleAllowTray}/>
+                    <Checkbox value={config?.allow_tray ?? false} SetValue={toggleAllowTray} />
                 </div>
             </div>
 
-            <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] p-[16px] rounded-[6px]'>
+            {/* @ts-ignore */}
+            <Link href={"/settings/updates"} className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] hover:bg-[#434343] active:bg-[#1F1F1F] duration-200 cursor-pointer p-[16px] rounded-[6px]'>
+                <div>
+                    <div className='flex flex-col'>
+                        <span className='text-white text-[14px] poppins-regular'>
+                            {t("Updates")}
+                        </span>
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-white text-[12px] opacity-80 poppins-regular'>
+                            {t("Force update or set a update branch")}
+                        </motion.span>
+                    </div>
+                </div>
+            </Link>
+            
+            {/* <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] p-[16px] rounded-[6px]'>
                 <div>
                     <div className='flex flex-col'>
                         <span className='text-white text-[14px] poppins-regular'>
@@ -154,7 +169,7 @@ export function SoftwareSettings() {
                         {updateText}
                     </motion.button>
                 </div>
-            </div>
+            </div> */}
         </div>
         <div className='flex flex-row justify-between pt-[2px]'>
             <div className='text-[12px] poppins-regular flex flex-row gap-[12px]'>
@@ -165,27 +180,27 @@ export function SoftwareSettings() {
                         }}>Alumi</button>
                     </Trans>
                 </span>
-                
+
                 <span>
                     <Trans i18nKey={"Design By"}>
                         Design by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => {
                             // window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")
-                            }}>Klonerovsky</button>
+                        }}>Klonerovsky</button>
                     </Trans>
                 </span>
 
                 <span>
                     <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => {
                         //  window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager")} 
-                         }}>{t("Source code")}</button>
+                    }}>{t("Source code")}</button>
                 </span>
-                </div>
+            </div>
 
             <span className='poppins-regular text-[12px] text-[#C6C6C6]'>
                 v{version}
             </span>
         </div>
-        
-        
+
+
     </div>)
 }

@@ -6,5 +6,5 @@ export const useLighthouseGroups = () => {
 
     const { groups } = useContext(WebsocketContext);
 
-    return Object.values(groups).filter(c => c)
+    return groups
 }

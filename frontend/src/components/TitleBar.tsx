@@ -12,6 +12,7 @@ import { useConfig } from "@src/lib/hooks/useConfig";
 import { useSteamVRStatus } from "@src/lib/hooks/useSteamVRStatus";
 import { WebsocketContext } from "@src/lib/context/websocket.context";
 import { usePlatform } from "@src/lib/hooks/usePlatform";
+import { useLighthouseGroups } from "@src/lib/hooks/useLighthouseGroups";
 
 
 
@@ -20,6 +21,7 @@ export function TitleBar() {
     const { websocket, send } = useContext(WebsocketContext);
     const steamVRLaunched = useSteamVRStatus();
     const platform = usePlatform();
+    const groups = useLighthouseGroups();
     const [previousSteamVRState, setPreviousSteamVRState] = useState(false);
     const lighthouses = useLighthouses();
     const config = useConfig();
@@ -30,7 +32,7 @@ export function TitleBar() {
         
         for(const baseStation of lighthouses) {
             if (flags && !((baseStation.managed_flags & flags) > 0)) continue;
-            await ChangeBaseStationPowerStatus(send, baseStation.id, state);
+            await ChangeBaseStationPowerStatus(baseStation.id, state);
         }
     }
 
@@ -42,12 +44,35 @@ export function TitleBar() {
             if (steamVRLaunched && !previousSteamVRState) {
                 console.log("Waking up")
                 await bulkUpdate("awake", 2);
+
+                for (const value of Object.values(groups)) {
+                    if (value.managed_flags & 2) {
+                        for (const lighthouseSerial of value.base_stations) {
+                            let lighthouse = lighthouses.find(c => c.id == lighthouseSerial);
+                            if (lighthouse) {
+                                await ChangeBaseStationPowerStatus(lighthouse.id, "awake");
+                            }
+                        }
+                    }
+                }
                 setPreviousSteamVRState(steamVRLaunched);
                 return;
             }
 
             console.log("Putting in sleep mode")
             await bulkUpdate("sleep", 4);
+
+              for (const value of Object.values(groups)) {
+                    if (value.managed_flags & 4) {
+                        for (const lighthouseSerial of value.base_stations) {
+                            let lighthouse = lighthouses.find(c => c.id == lighthouseSerial);
+                            if (lighthouse) {
+                                await ChangeBaseStationPowerStatus(lighthouse.id, "sleep");
+                            }
+                        }
+                    }
+                }
+
             setPreviousSteamVRState(steamVRLaunched);
         })()
     }, [steamVRLaunched]);
