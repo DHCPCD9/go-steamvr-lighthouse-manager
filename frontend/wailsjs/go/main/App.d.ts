@@ -8,7 +8,7 @@ export function ChangeBaseStationChannel(arg1:string,arg2:number):Promise<string
 
 export function ChangeBaseStationPowerStatus(arg1:string,arg2:string):Promise<string>;
 
-export function CreateGroup(arg1:string):Promise<string>;
+export function CreateGroup(arg1:string,arg2:Array<string>):Promise<string>;
 
 export function ForceUpdate():Promise<void>;
 
@@ -31,6 +31,8 @@ export function IsSteamVRConnectivityAvailable():Promise<boolean>;
 export function IsUpdatingSupported():Promise<boolean>;
 
 export function Notify(arg1:string,arg2:string):Promise<void>;
+
+export function RemoveGroup(arg1:string):Promise<void>;
 
 export function RenameGroup(arg1:string,arg2:string):Promise<string>;
 

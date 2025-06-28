@@ -44,6 +44,7 @@ type Configuration struct {
 	TrayNotified       bool                                 `json:"tray_notified"`
 	KnownBaseStations  map[string]*BaseStationConfiguration `json:"known_base_stations"`
 	Groups             map[string]*Group                    `json:"groups"`
+	VersionBranch      string                               `json:"branch"`
 }
 
 type AppConfig struct {
@@ -122,6 +123,12 @@ func (c *Configuration) Load() {
 			RemoveFromStartup()
 		}
 	}
+
+	if c.VersionBranch == "" {
+		c.VersionBranch = "main"
+	}
+
+	c.Save()
 }
 
 func (c *Configuration) UpdateValue(jsonName string, value interface{}) {
@@ -168,14 +175,18 @@ func (c *Configuration) ForgetBaseStation(name string) {
 	c.Save()
 }
 
-func (c *Configuration) CreateGroup(name string) {
-	c.Groups[uuid.NewString()] = &Group{
+func (c *Configuration) CreateGroup(name string) (string, *Group) {
+	id := uuid.NewString()
+
+	c.Groups[id] = &Group{
 		Name:           name,
 		ManagedFlags:   6,
 		BaseStationIDs: []string{},
 	}
 
 	c.Save()
+
+	return id, c.Groups[id]
 }
 
 func (c *Configuration) DeleteGroup(uid string) {

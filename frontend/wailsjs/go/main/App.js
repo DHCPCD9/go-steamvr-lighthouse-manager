@@ -14,8 +14,8 @@ export function ChangeBaseStationPowerStatus(arg1, arg2) {
   return window['go']['main']['App']['ChangeBaseStationPowerStatus'](arg1, arg2);
 }
 
-export function CreateGroup(arg1) {
-  return window['go']['main']['App']['CreateGroup'](arg1);
+export function CreateGroup(arg1, arg2) {
+  return window['go']['main']['App']['CreateGroup'](arg1, arg2);
 }
 
 export function ForceUpdate() {
@@ -60,6 +60,10 @@ export function IsUpdatingSupported() {
 
 export function Notify(arg1, arg2) {
   return window['go']['main']['App']['Notify'](arg1, arg2);
+}
+
+export function RemoveGroup(arg1) {
+  return window['go']['main']['App']['RemoveGroup'](arg1);
 }
 
 export function RenameGroup(arg1, arg2) {

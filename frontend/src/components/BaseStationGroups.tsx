@@ -1,15 +1,16 @@
 import { useRouter } from "preact-router";
 import { GroupedBaseStations } from "../assets/icons/GroupedBaseStations";
 import { useGroupedLighthouses } from "@src/lib/hooks/useGroupedLighthouses";
-export function BaseStationGroup({ group }: { group: any }) {
+import type { LighthouseGroup } from "@src/lib/types";
+export function BaseStationGroup({ group, id }: { id: string, group: LighthouseGroup }) {
 
-    const baseStations= useGroupedLighthouses(group.name);
+    const baseStations = useGroupedLighthouses(id);
     const [, push] = useRouter();
 
     return (<div className={`text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] data-[selected="true"]:bg-[#434343] duration-200 cursor-pointer active:bg-[#1F1F1F]!`}>
         <div className="flex flex-row gap-[16px] items-center" onClick={() => {
             // onSelect();
-            push(`/groups/${group.name}`);
+            push(`/groups/${id}`);
         }}>
             <GroupedBaseStations  />
             <div className="flex flex-col gap-[2px] text-[14px]">

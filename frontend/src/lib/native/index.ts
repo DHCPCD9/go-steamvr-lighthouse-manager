@@ -6,7 +6,7 @@ import { WebsocketContext, type WebsocketContextType } from "../context/websocke
 import * as native from "../../../wailsjs/go/main/App"
 type status = "ok" | string
 
-export const ChangeBaseStationPowerStatus = async (send: WebsocketContextType['send'] ,id: string, mode: "sleep" | "awake") => {
+export const ChangeBaseStationPowerStatus = async (id: string, mode: "sleep" | "awake") => {
     await native.ChangeBaseStationPowerStatus(id, mode);
 }
 
@@ -49,8 +49,8 @@ export const AddBaseStationToGroup = async (stationId: string, groupId: string):
     return native.AddBaseStationToGroup(stationId, groupId);
 }
 
-export const CreateGroup = async (name: string): Promise<string> => {
-    return native.CreateGroup(name);
+export const CreateGroup = async (name: string, baseStations?: Array<string>): Promise<string> => {
+    return native.CreateGroup(name, baseStations ?? []);
 }
 
 export const InitBluetooth = async (): Promise<status> => {
@@ -67,4 +67,8 @@ export const ForgetBaseStation = async (id: string): Promise<void> => {
 
 export const UpdateBaseStationParam = async (id: string, param: string, value: any): Promise<void> => {
     return native.UpdateBaseStationParam(id, param, value);
+}
+
+export const RemoveGroup = async (id: string): Promise<void> => {
+    return native.RemoveGroup(id);
 }

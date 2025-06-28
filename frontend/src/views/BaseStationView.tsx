@@ -55,15 +55,9 @@ export function BaseStationsList() {
         }
 
 
-        let group = await CreateGroup(newName);
-        for(const station of selectedBaseStations) {
-            await AddBaseStationToGroup(newName, station);
-        }
-
-        if(group == "ok") {
-            return push(`/groups/${newName}`)
-        }
-
+        let group = await CreateGroup(newName, selectedBaseStations);
+        setSelectedBaseStation([]);
+        return push(`/groups/${group}`);
     }
 
     useEffect(() => {
@@ -82,7 +76,7 @@ export function BaseStationsList() {
         <div>
             <AnimatePresence>
                 <div className="flex flex-col gap-[8px] px-[24px] py-[2px] h-[335px] overflow-y-auto" key={"base stations"} style={{ scrollbarWidth: 'none' }}>
-                {groups.map((c, v) => (<BaseStationGroup key={`${v}-group`} group={c} />))}
+                {Object.entries(groups).filter(([k,v]) => v).map(([k, v]) => (<BaseStationGroup key={`${k}-group`} id={k} group={v} />))}
 
                     {baseStations.map((station, index) =>
                         <motion.div key={index} initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ delay: (index + 1) * 0.150 }}>

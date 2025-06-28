@@ -33,12 +33,12 @@ export function BaseStation({ station, onSelect, selected }: { station: Lighthou
     const updatePowerState = async () => {
         if (isAwoke) {
             //Sleeping of
-            let result = await ChangeBaseStationPowerStatus(send, station.id, "sleep");
+            let result = await ChangeBaseStationPowerStatus(station.id, "sleep");
             return;
         }
 
         //Waking it up
-        await ChangeBaseStationPowerStatus(send, station.id, "awake");
+        await ChangeBaseStationPowerStatus(station.id, "awake");
     }
 
     const { t } = useTranslation();
