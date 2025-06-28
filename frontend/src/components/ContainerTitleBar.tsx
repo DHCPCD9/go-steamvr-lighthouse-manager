@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, route } from 'preact-router'
 
-export function ContainerTitleBar({ items, beforeExit, onLastItemClick }) {
+export function ContainerTitleBar({ items, beforeExit, onLastItemClick }: { items: Array<{ text: string, link: string }>, beforeExit: () => void, onLastItemClick: () => void}) {
 
     const transitionParams = {  initial: { opacity: 0, x: -3 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -3 }, transition: { delay: 0.1 } };
     if (!items.length) {
@@ -14,6 +14,7 @@ export function ContainerTitleBar({ items, beforeExit, onLastItemClick }) {
                     &gt;
                 </motion.div>}
                 <motion.div {...transitionParams}>
+                    {/* @ts-ignore */}
                 <Link href={c.link} className={`text-nowrap data-[active="true"]:text-white text-[#C6C6C6]`} data-active={i == (items.length - 1)}>
                         {c.text}
                     </Link>

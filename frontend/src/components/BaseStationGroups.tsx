@@ -1,7 +1,7 @@
 import { useRouter } from "preact-router";
 import { GroupedBaseStations } from "../assets/icons/GroupedBaseStations";
-import { useGroupedLighthouses } from "../../lib/hooks/useGroupedLighthouses";
-export function BaseStationGroup({ group }) {
+import { useGroupedLighthouses } from "@src/lib/hooks/useGroupedLighthouses";
+export function BaseStationGroup({ group }: { group: any }) {
 
     const baseStations= useGroupedLighthouses(group.name);
     const [, push] = useRouter();

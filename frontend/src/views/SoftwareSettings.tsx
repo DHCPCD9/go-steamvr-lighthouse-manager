@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Checkbox } from '../components/Checkbox'
 import { ContainerTitleBar } from '../components/ContainerTitleBar';
-import { ForceUpdate, GetConfiguration, GetVersion, IsSteamVRConnectivityAvailable, IsUpdatingSupported, ToggleSteamVRManagement, ToggleTray, UpdateConfigValue } from '../../wailsjs/go/main/App';
+import { ForceUpdate, GetConfiguration, IsSteamVRConnectivityAvailable, IsUpdatingSupported, UpdateConfigValue } from '@src/lib/native/index.ts';
 import { Trans, useTranslation } from 'react-i18next';
 import { DropdownOption } from '../components/Dropdown';
 import { smoothResize } from '../utils/windows';
 import { motion } from 'framer-motion'
-import { useContainerTitlebar } from '../../lib/stores/titlebar.store';
-import { useConfig } from '../../lib/hooks/useConfig';
+import { useContainerTitlebar } from '@src/lib/stores/titlebar.store.ts';
+import { useConfig } from '@src/lib/hooks/useConfig';
+import { usePlatform } from '@src/lib/hooks/usePlatform';
 
 export function SoftwareSettings() {
 
     //TODO: Reduce hooks amount
     const config = useConfig();
+    const platform = usePlatform();
     const [isUpdatingSupported, setIsUpdatingSupported] = useState(false);
     const [steamVRAvailable, setsteamVRAvailable] = useState(false);
-    const [version, setVersion] = useState();
-    const [updateLocked, setUpdateLocked] = useState();
+    const [version, setVersion] = useState<string>();
+    const [updateLocked, setUpdateLocked] = useState<boolean>();
     const { t, i18n } = useTranslation();
     const [updateText, setUpdateText] = useState(t("Check")); // I think there is better way to do it, but it works anyways
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -27,9 +29,9 @@ export function SoftwareSettings() {
         (async () => {
             await smoothResize(700, 435);
 
-            setVersion(await GetVersion());
-            setIsUpdatingSupported(await IsUpdatingSupported());
-            setsteamVRAvailable(await IsSteamVRConnectivityAvailable());
+            setVersion(platform.version);
+            setIsUpdatingSupported(platform.system == "windows");
+            setsteamVRAvailable(config.is_steamvr_installed);
         })()
     }, []);
 
@@ -45,7 +47,7 @@ export function SoftwareSettings() {
 
     const checkForUpdates = async () => {
 
-        if (!isUpdatingSupported) return window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager/releases/latest");
+        // if (!isUpdatingSupported) return window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager/releases/latest");
         setUpdateLocked(true);
         let onlineVersion = await fetch("https://raw.githubusercontent.com/DHCPCD9/go-steamvr-lighthouse-manager/refs/heads/main/VERSION").then(r => r.text()).then(v => v.trim());
 
@@ -88,7 +90,7 @@ export function SoftwareSettings() {
         kr: "한국어",
         jp: "日本語",
         ua: "Українська"
-    }
+    } as any;
 
     const languages = Object.keys(i18n.store.data);
 
@@ -158,18 +160,24 @@ export function SoftwareSettings() {
             <div className='text-[12px] poppins-regular flex flex-row gap-[12px]'>
                 <span>
                     <Trans i18nKey={"Made By"}>
-                        Made by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://lisek.cc")}>Alumi</button>
+                        Made by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => {
+                            // window.runtime.BrowserOpenURL("https://lisek.cc")
+                        }}>Alumi</button>
                     </Trans>
                 </span>
                 
                 <span>
                     <Trans i18nKey={"Design By"}>
-                        Design by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")}>Klonerovsky</button>
+                        Design by <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => {
+                            // window.runtime.BrowserOpenURL("https://github.com/klonerovsky183")
+                            }}>Klonerovsky</button>
                     </Trans>
                 </span>
 
                 <span>
-                    <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager")}>{t("Source code")}</button>
+                    <button className='text-[#1D81FF] hover:text-[#66AAFF] duration-150 cursor-pointer' onClick={() => {
+                        //  window.runtime.BrowserOpenURL("https://github.com/DHCPCD9/go-steamvr-lighthouse-manager")} 
+                         }}>{t("Source code")}</button>
                 </span>
                 </div>
 

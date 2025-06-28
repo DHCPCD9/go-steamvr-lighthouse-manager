@@ -35,7 +35,7 @@ type JsonBaseStation struct {
 }
 
 //go:embed VERSION
-var version string
+var BINARY_VERSION string
 
 // App struct
 type App struct {
@@ -139,19 +139,18 @@ func (a *App) AddBaseStationToGroup(name string, station string) string {
 
 func (a *App) RenameGroup(name string, newName string) string {
 
-	log.Println(name, newName)
-
-	log.Println(config.Groups)
 	if config.Groups[name] == nil {
 		return "error: Unknown group"
 	}
 
-	group := *config.Groups[name]
-	group.Name = newName
-	config.Groups[newName] = &group
+	group := config.Groups[name]
+	config.Groups[newName] = &Group{
+		Name:           newName,
+		ManagedFlags:   group.ManagedFlags,
+		BaseStationIDs: group.BaseStationIDs,
+	}
 
-	delete(config.Groups, name)
-
+	log.Println(config.Groups[newName])
 	WEBSOCKET_BROADCAST.Broadcast(preparePacket("group.rename", map[string]interface{}{
 		"old_name": name,
 		"new_name": newName,
@@ -304,7 +303,7 @@ func (a *App) GetConfiguration() *Configuration {
 }
 
 func (a *App) GetVersion() string {
-	return version
+	return BINARY_VERSION
 }
 
 func (a *App) ForceUpdate() {

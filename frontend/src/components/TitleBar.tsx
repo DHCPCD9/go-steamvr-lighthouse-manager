@@ -1,32 +1,36 @@
 import { PowerCircle, SettingsIcon, X, XIcon } from "lucide-preact";
-import { ChangeBaseStationPowerStatus, IsSteamVRConnected, IsSteamVRConnectivityAvailable, Shutdown, SleepAllBaseStations, UpdateConfigValue, WakeUpAllBaseStations } from "../../wailsjs/go/main/App";
-import { useEffect, useState } from "preact/hooks";
+import { ChangeBaseStationPowerStatus, UpdateConfigValue } from "@src/lib/native/index";
+import { useContext, useEffect, useState } from "preact/hooks";
 import { AnimatePresence, motion } from 'framer-motion';
 import { PowerStatusIcon } from "../assets/icons/PowerStatusIcon";
 import { TitleBarSettingsIcon } from "../assets/icons/TitleBarSettingsIcon";
 import { CloseIcon } from "../assets/icons/CloseIcon";
 import { route } from "preact-router";
 import { useTranslation } from "react-i18next";
-import { useLighthouses } from "../../lib/hooks/useLighthouses";
-import { useConfig } from "../../lib/hooks/useConfig";
-import { useSteamVRStatus } from "../../lib/hooks/useSteamVRStatus";
+import { useLighthouses } from "@src/lib/hooks/useLighthouses";
+import { useConfig } from "@src/lib/hooks/useConfig";
+import { useSteamVRStatus } from "@src/lib/hooks/useSteamVRStatus";
+import { WebsocketContext } from "@src/lib/context/websocket.context";
+import { usePlatform } from "@src/lib/hooks/usePlatform";
 
 
 
 export function TitleBar() {
 
+    const { websocket, send } = useContext(WebsocketContext);
     const steamVRLaunched = useSteamVRStatus();
+    const platform = usePlatform();
     const [previousSteamVRState, setPreviousSteamVRState] = useState(false);
     const lighthouses = useLighthouses();
     const config = useConfig();
 
     const { t } = useTranslation();
 
-    const bulkUpdate = async (state, flags) => {
+    const bulkUpdate = async (state: "sleep" | "awake", flags: number = 0) => {
         
         for(const baseStation of lighthouses) {
             if (flags && !((baseStation.managed_flags & flags) > 0)) continue;
-            await ChangeBaseStationPowerStatus(baseStation.id, state);
+            await ChangeBaseStationPowerStatus(send, baseStation.id, state);
         }
     }
 
@@ -64,10 +68,14 @@ export function TitleBar() {
     }
 
     const Quit = async () => {
+
+
         if (config.allow_tray) {
+            //@ts-ignore
             await window.runtime.Hide()
 
             if (!config.tray_notified) {
+                //@ts-ignore
                 await window.go.main.App.Notify("SteamVR Lighthosue Manager", t("Window was hidden in the tray."))
                 await UpdateConfigValue("tray_notified", true)
             }
@@ -75,13 +83,14 @@ export function TitleBar() {
             return
         }
         
-        return await window.runtime.Quit();
+        //@ts-ignore
+        return await window.runtime.Quit()
     }
 
-    return <div className="flex flex-row justify-between pt-[16px] px-[24px] select-none" style={"--wails-draggable:drag"}>
+    return <div className="flex flex-row justify-between pt-[16px] px-[24px] select-none" style="--wails-draggable:drag">
         <div className="flex gap-1 flex-row">
             <div className="text-[#888888] poppins-medium text-[14px]/[20px]">
-                SteamVR Lighthouse Manager
+                SteamVR Lighthouse Manager <span className={"text-[#505050] poppins-medium text-[12px]/[20px]"}>{platform.version}</span>
             </div>
         </div>
         <div>
@@ -92,6 +101,10 @@ export function TitleBar() {
                 {config.is_steamvr_installed && config && config.is_steamvr_managed && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="flex flex-row gap-[4px] text-white poppins-regular text-[14px] items-center px-2">
                     <span className="text-[##C6C6C6]">SteamVR</span>
                     <span className={`data-[active="true"]:text-[#7AFF73] text-[#FF7373] duration-200`} data-active={steamVRLaunched}>{steamVRLaunched ? t("Active") : t("Inactive")} </span>
+                </div></motion.div>}
+
+                {!websocket.ready && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} ><div className="poppins-regular text-sm items-center px-2">
+                    <span className={`text-[#FF7373] bg-[#FF7373]/20 rounded-xl border-[#FF7373] border-[0.5px] p-1 text-sm`}>Server connection failed.</span>
                 </div></motion.div>}
 
 

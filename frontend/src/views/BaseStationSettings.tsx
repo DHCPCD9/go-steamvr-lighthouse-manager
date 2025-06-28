@@ -1,7 +1,7 @@
 import { route, useRouter } from "preact-router"
 import { ContainerTitleBar } from "../components/ContainerTitleBar"
 import { useState, useEffect } from 'preact/hooks'
-import { ChangeBaseStationChannel, ForgetBaseStation, UpdateBaseStationParam } from "../../wailsjs/go/main/App"
+import { ChangeBaseStationChannel, ForgetBaseStation, UpdateBaseStationParam } from "@src/lib/native/index"
 import { smoothResize } from "../utils/windows";
 import { ChevronIcon } from "../assets/icons/ChevronIcon"
 import { AnimatePresence, motion } from 'framer-motion'
@@ -10,9 +10,9 @@ import { DropdownOption } from "../components/Dropdown";
 import { InputOption } from "../components/Input";
 import { Checkbox } from "../components/Checkbox";
 import { CheckboxOption } from "../components/CheckboxOption";
-import { useContainerTitlebar } from "../../lib/stores/titlebar.store";
-import { useLighthouse } from "../../lib/hooks/useLighthouse";
-import { useLighthouses } from "../../lib/hooks/useLighthouses";
+import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
+import { useLighthouse } from "@hooks/useLighthouse";
+import { useLighthouses } from "@hooks/useLighthouses";
 
 export function BaseStationSettingsPage() {
 
@@ -26,10 +26,10 @@ export function BaseStationSettingsPage() {
     useEffect(() => {
         (async () => {
             if (channelChangeActive) {
-                return await smoothResize(700, 510, 150);
+                return await smoothResize(700, 510);
             }
 
-            return await smoothResize(700, 435, 150);
+            return await smoothResize(700, 435);
         })()
     }, [channelChangeActive]);
 
@@ -39,7 +39,7 @@ export function BaseStationSettingsPage() {
 
     const updateChannel = async (channel) => {
 
-        if (otherBaseStations.find(c => c.Channel == channel)) return;
+        if (otherBaseStations.find(c => c.channel == channel)) return;
 
         if (channel < 1 && channel > 16) return alert("???");
 
@@ -71,9 +71,9 @@ export function BaseStationSettingsPage() {
             <InputOption maxLength={16} key={"nickname"} title={t("Nickname")} description={t("Base station nickname to display")} placeholder={lighthouse && lighthouse.id} value={lighthouse.name} setValue={setNickname} />
         </div>
         <div className="text-white poppins-regular px-[24px]">
-            <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: lighthouse.channel, value: lighthouse.channel }} items={[...Array(16).keys().map(c => {
-                return { title: c + 1, value: c + 1 }
-            })]} />
+            <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: lighthouse.channel, value: lighthouse.channel }} items={[...Array(16).fill(null).map((_, index) => {
+    return { title: index + 1, value: index + 1 };
+})]} />
         </div>
 
         <div className="text-white poppins-regular px-[24px]">

@@ -38,6 +38,8 @@ export function Shutdown():Promise<void>;
 
 export function SleepAllBaseStations():Promise<void>;
 
+export function StartScanFor10Seconds():Promise<void>;
+
 export function ToggleSteamVRManagement():Promise<main.Configuration>;
 
 export function ToggleTray():Promise<main.Configuration>;

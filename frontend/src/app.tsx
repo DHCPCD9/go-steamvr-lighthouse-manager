@@ -1,17 +1,18 @@
+//@ts-ignore
 import './app.css';
 import { BaseStationsList } from './views/BaseStationView';
 import { SoftwareSettings } from './views/SoftwareSettings';
 import { TitleBar } from './components/TitleBar';
 import Router, { useRouter } from 'preact-router'
 import { BaseStationSettingsPage } from './views/BaseStationSettings';
-import { useContainerTitlebar } from '../lib/stores/titlebar.store';
+import { useContainerTitlebar } from '@src/lib/stores/titlebar.store.ts';
 import { ContainerTitleBar } from './components/ContainerTitleBar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GroupedBaseStations } from './assets/icons/GroupedBaseStations';
 import { GroupedBaseStationView } from './views/groups/GroupedBaseStationView';
 import { GroupedBaseStationSettings } from './views/groups/GroupedBaseStationSettingsView';
 import { useEffect, useRef } from 'preact/hooks';
-import { WebsocketProvider } from '../lib/context/websocket.context';
+import { WebsocketProvider } from '@src/lib/context/websocket.context.tsx';
 
 const AnimatedPath = ({ children, path }) => {
     return (<motion.div key={path} initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 5 }}>
@@ -26,7 +27,7 @@ export function App(props) {
         <WebsocketProvider>
             <motion.div>
                 <TitleBar />
-                <ContainerTitleBar items={items} onLastItemClick={callbackOnLastClick} />
+                <ContainerTitleBar items={items} onLastItemClick={callbackOnLastClick} beforeExit={callbackOnClick} />
                 <AnimatePresence mode='wait'>
                     <Router>
                         <AnimatedPath path={"/"}>

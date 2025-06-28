@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tiendc/go-deepcopy"
 )
 
@@ -168,7 +169,7 @@ func (c *Configuration) ForgetBaseStation(name string) {
 }
 
 func (c *Configuration) CreateGroup(name string) {
-	c.Groups[name] = &Group{
+	c.Groups[uuid.NewString()] = &Group{
 		Name:           name,
 		ManagedFlags:   6,
 		BaseStationIDs: []string{},
@@ -177,8 +178,8 @@ func (c *Configuration) CreateGroup(name string) {
 	c.Save()
 }
 
-func (c *Configuration) DeleteGroup(name string) {
-	delete(c.Groups, name)
+func (c *Configuration) DeleteGroup(uid string) {
+	delete(c.Groups, uid)
 	c.Save()
 }
 
@@ -200,7 +201,7 @@ func (c *Configuration) UpdateGroupValue(group, name string, value interface{}) 
 }
 
 func (c *Configuration) Save() {
-	WEBSOCKET_BROADCAST.Broadcast(preparePacket("config.configure", *c))
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("client.configure", *c))
 
 	data, err := json.Marshal(c)
 
