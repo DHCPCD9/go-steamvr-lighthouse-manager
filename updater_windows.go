@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -20,20 +21,49 @@ import (
 )
 
 var FLAGS_NO_UPDATE string = "NO_UPDATES"
+var client = github.NewClient(nil)
 
 func ForceUpdate() {
-	client := github.NewClient(nil)
 
-	files, _, err := client.Repositories.GetLatestRelease(context.Background(), "DHCPCD9", "go-steamvr-lighthouse-manager")
+	releases, _, err := client.Repositories.ListReleases(context.Background(), "DHCPCD9", "go-steamvr-lighthouse-manager", &github.ListOptions{})
 
 	if err != nil {
 		log.Println("Failed to check updates: " + err.Error())
 		return
 	}
 
+	if config == nil {
+		log.Println("Failed to update: config is nil")
+		return
+	}
+
+	for _, v := range releases {
+		if strings.HasSuffix(*v.Name, fmt.Sprintf("-%s", config.VersionBranch)) {
+			UpdateWithRelease(*v.TagName)
+			return
+		}
+	}
+
+	log.Println("Failed to find updates")
+
 	//Finding the installer
 
-	for _, v := range files.Assets {
+}
+
+func UpdateWithRelease(tag string) {
+
+	if strings.Contains(VERSION_FLAGS, "DEBUG") {
+		return
+	}
+
+	release, _, err := client.Repositories.GetReleaseByTag(context.Background(), "DHCPCD9", "go-steamvr-lighthouse-manager", tag)
+
+	if err != nil {
+		log.Printf("Failed to update: %s\n", err.Error())
+		return
+	}
+
+	for _, v := range release.Assets {
 		if strings.HasSuffix(*v.Name, "installer.exe") {
 			//Downloading the release
 			response, err := http.Get(*v.BrowserDownloadURL)

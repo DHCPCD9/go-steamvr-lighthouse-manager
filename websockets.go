@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -22,6 +23,8 @@ var config *Configuration
 var PREVIOUS_STEAMVR_VALUE = false
 var STEAMVR_WATCHING = false
 var WEBSOCKET_BROADCAST = broadcast.NewRelay[interface{}]()
+var STEAMVR_CANCEL_SOCKET = context.Background()
+var STEAMVR_TICKER = time.NewTicker(time.Second)
 
 func StartHttp() {
 	http.HandleFunc("/api/lighthouse/websocket", handleLighthouseSocket)
@@ -77,7 +80,11 @@ func waitForSteamVR() {
 
 				}
 
-				time.Sleep(time.Second * 3)
+				select {
+				case <-STEAMVR_TICKER.C:
+				case <-STEAMVR_CANCEL_SOCKET.Done():
+					break
+				}
 			}
 		}
 
@@ -105,6 +112,9 @@ func reader(conn *websocket.Conn) {
 	//Sending all current base stations
 	for _, v := range knownBaseStations.Items() {
 
+		if v == nil {
+			continue
+		}
 		bs := *v
 
 		configBs := config.KnownBaseStations[bs.GetId()]

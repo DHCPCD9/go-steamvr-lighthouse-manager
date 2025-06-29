@@ -95,6 +95,7 @@ func (a *App) startup(ctx context.Context) {
 
 	go systray.Run(a.trayReady, TrayExit)
 
+	go a.InitBluetooth()
 	go StartHttp()
 
 }
@@ -359,11 +360,12 @@ func (a *App) bluetoothCallback(adapter *bluetooth.Adapter, sr bluetooth.ScanRes
 }
 
 func (a *App) StartScanFor10Seconds() {
-	log.Println("Starting scan for 10 seconds...")
 	go adapter.Scan(a.bluetoothCallback)
 	time.Sleep(time.Second * 10)
-	log.Println("Stopping scan")
 	adapter.StopScan()
+
+	time.Sleep(time.Second * 30)
+	a.StartScanFor10Seconds()
 }
 
 func (a *App) InitBluetooth() bool {

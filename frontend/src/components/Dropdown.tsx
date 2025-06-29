@@ -1,8 +1,9 @@
+import type { Dispatch, StateUpdater } from "preact/hooks";
 import { ChevronIcon } from "../assets/icons/ChevronIcon";
 import { AnimatePresence, motion } from "framer-motion"
 
 export function DropdownOption<T>({ title, description, value, items, lockedValues, open, setOpen, setValue }:
-    { title: string, description: string, value: { value: T, title: string }, items: Array<{ value: T, title: string }>, lockedValues: Array<{ value: T, title: string }>, open: boolean, setOpen: (bool) => void, setValue: (any) => void }) {
+    { title: string, description: string, value: { value: T, title: string | number  }, items: Array<{ value: T, title: string | number  }>, lockedValues: Array<{ value: T, title: string | number }>, open: boolean, setOpen:  Dispatch<StateUpdater<boolean>>, setValue: (data: {value: T, title: string | number }) => void }) {
 
 
     return <div className="text-white poppins-regular">
@@ -31,7 +32,7 @@ export function DropdownOption<T>({ title, description, value, items, lockedValu
                         className={`px-[12px] py-[8px] rounded-[5px] text-[12px] data-[active="true"]:bg-[#1D81FF] data-[occupied="true"]:bg-[#121212] data-[occupied="true"]:text-[#888888] data-[can-be-selected="true"]:hover:bg-[#434343] duration-200 data-[can-be-selected="true"]:cursor-pointer`}
                         data-can-be-selected={value.value != v.value && !lockedValues.filter(c => c !== value.value).map(c => c.value).includes(v.value)}
                         data-active={v.value == value.value}
-                        data-occupied={lockedValues.filter(c => c !== value.value).map(c => c.value).includes(v.value)}
+                        data-occupied={lockedValues.filter(c => c !== value.value).map(c => c.value).includes(v.value) && v.value !== value.value}
                         onClick={() => setValue(v)}
                     >
                         {v.title}
