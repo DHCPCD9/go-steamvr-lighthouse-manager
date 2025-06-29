@@ -37,7 +37,8 @@ const DEFAULT_CONTEXT_VALUE: WebsocketContextType = {
         is_steamvr_installed: false,
         is_steamvr_managed: false,
         known_base_stations: {},
-        tray_notified: false
+        tray_notified: false,
+        branch: "main"
     },
     websocket: {
         ready: false

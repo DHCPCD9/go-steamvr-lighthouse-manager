@@ -24,7 +24,8 @@ export interface Configuration {
   known_base_stations: {
     [name: string]: LighthouseStation
   }
-  tray_notified: boolean
+  tray_notified: boolean,
+  branch: "main" | "beta"
 }
 
 

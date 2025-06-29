@@ -26,7 +26,7 @@ export function BaseStationSettingsPage() {
     useEffect(() => {
         (async () => {
             if (channelChangeActive) {
-                return await smoothResize(700, 510);
+                return await smoothResize(700, 480);
             }
 
             return await smoothResize(700, 435);
@@ -71,7 +71,9 @@ export function BaseStationSettingsPage() {
             <InputOption maxLength={16} key={"nickname"} title={t("Nickname")} description={t("Base station nickname to display")} placeholder={lighthouse && lighthouse.id} value={lighthouse.name} setValue={setNickname} />
         </div>
         <div className="text-white poppins-regular px-[24px]">
-            <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: lighthouse.channel, value: lighthouse.channel }} items={[...Array(16).fill(null).map((_, index) => {
+            <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel).map(c => {
+                return { title: c, value: c }
+            }) : []} title={t("Channel")} description={t("Base station channel to operate")} open={channelChangeActive} setOpen={setChannelChangeActive} value={{ title: lighthouse.channel, value: lighthouse.channel }} items={[...Array(16).fill(null).map((_, index) => {
     return { title: index + 1, value: index + 1 };
 })]} />
         </div>

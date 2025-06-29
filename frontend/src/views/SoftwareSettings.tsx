@@ -103,7 +103,9 @@ export function SoftwareSettings() {
 
         <div className='flex flex-col gap-[8px] w-full pt-[8px]'>
 
-            <DropdownOption title={t("Language")} description={t("Language of the interface")} setValue={i18n.changeLanguage} value={{ title: languageNames[i18n.language], value: i18n.language }} items={languages.filter(c => c != "cimode").map(c => {
+            <DropdownOption title={t("Language")} description={t("Language of the interface")} setValue={({ value }) => {
+                i18n.changeLanguage(value);
+            }} value={{ title: languageNames[i18n.language], value: i18n.language }} items={languages.filter(c => c != "cimode").map(c => {
                 return { title: languageNames[c] ?? c, value: c }
             })} open={dropdownOpen} setOpen={setDropdownOpen} lockedValues={[]} />
 
