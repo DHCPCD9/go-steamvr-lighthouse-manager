@@ -52,6 +52,11 @@ func ForceUpdate() {
 
 func UpdateWithRelease(tag string) {
 
+	withReplacedSuffix, _ := strings.CutSuffix(tag, fmt.Sprintf("-%s", config.VersionBranch))
+	if withReplacedSuffix == BINARY_VERSION {
+		return
+	}
+
 	if strings.Contains(VERSION_FLAGS, "DEBUG") {
 		return
 	}
