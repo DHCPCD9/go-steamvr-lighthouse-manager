@@ -38,13 +38,13 @@ func ForceUpdate() {
 	}
 
 	for _, v := range releases {
-		if strings.HasSuffix(*v.Name, fmt.Sprintf("-%s", config.VersionBranch)) {
+		if strings.HasSuffix(*v.TagName, fmt.Sprintf("-%s", config.VersionBranch)) {
 			UpdateWithRelease(*v.TagName)
 			return
 		}
 	}
 
-	log.Println("Failed to find updates")
+	log.Printf("Failed to find updates with branch %s\n", config.VersionBranch)
 
 	//Finding the installer
 
@@ -53,6 +53,7 @@ func ForceUpdate() {
 func UpdateWithRelease(tag string) {
 
 	withReplacedSuffix, _ := strings.CutSuffix(tag, fmt.Sprintf("-%s", config.VersionBranch))
+
 	if withReplacedSuffix == BINARY_VERSION {
 		return
 	}
