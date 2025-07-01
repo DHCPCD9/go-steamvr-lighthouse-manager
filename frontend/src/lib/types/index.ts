@@ -121,10 +121,20 @@ export interface GroupRemovePayload extends WebsocketPayloadBase {
 
 
 
+export interface ClientScanPayload extends WebsocketPayloadBase {
+  event: 'client.scan',
+  data: {
+    status: boolean;
+  }
+}
+
+
+
 export type WebsocketPayload =
   | ConfigurePayload
   | SteamVRStatusUpdatePayload
   | ClientPlatformPayload
+  | ClientScanPayload
   | GroupAddedPayload
   | GroupRenamePayload
   | GroupLighthousesAdded

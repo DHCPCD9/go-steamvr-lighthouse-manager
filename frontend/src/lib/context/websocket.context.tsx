@@ -20,6 +20,7 @@ export interface WebsocketContextType {
         ready: boolean,
     },
     platform: ClientPlatformPayload['data'],
+    scanning: boolean,
     send: (payload: ClientPayload) => void
 }
 
@@ -50,7 +51,8 @@ const DEFAULT_CONTEXT_VALUE: WebsocketContextType = {
     },
     send: (payload) => {
         console.log("Not ready!")
-    }
+    },
+    scanning: false
 };
 
 export const WebsocketContext = createContext<WebsocketContextType>(DEFAULT_CONTEXT_VALUE);
@@ -69,8 +71,6 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (data.event == "lighthouse.update") {
-
-
             setState((state) => {
                 return {
                     ...state,
@@ -122,6 +122,9 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
             setState((state) => { return { ...state, steamvr: { active: data.data.status } } })
         }
 
+        if (data.event == "client.scan") {
+            setState((state) => { return { ...state, scanning: data.data.status } })
+        }
 
     }
 

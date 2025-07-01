@@ -360,12 +360,16 @@ func (a *App) bluetoothCallback(adapter *bluetooth.Adapter, sr bluetooth.ScanRes
 }
 
 func (a *App) StartScanFor10Seconds() {
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("client.scan", map[string]interface{}{
+		"status": true,
+	}))
+
 	go adapter.Scan(a.bluetoothCallback)
 	time.Sleep(time.Second * 10)
 	adapter.StopScan()
-
-	time.Sleep(time.Second * 30)
-	a.StartScanFor10Seconds()
+	WEBSOCKET_BROADCAST.Broadcast(preparePacket("client.scan", map[string]interface{}{
+		"status": false,
+	}))
 }
 
 func (a *App) InitBluetooth() bool {

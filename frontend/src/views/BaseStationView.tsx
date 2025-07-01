@@ -1,12 +1,11 @@
 import { BaseStation } from "../components/BaseStation";
 import { useContext, useEffect, useState } from 'preact/hooks'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Loader, Loader2Icon } from "lucide-preact";
+import { Copy, Loader, Loader2Icon, RefreshCcw } from "lucide-preact";
 import { AddBaseStationToGroup, CreateGroup, GetConfiguration, InitBluetooth } from "@src/lib/native/index";
 import { smoothResize } from "../utils/windows";
 import { ContainerTitleBar } from "../components/ContainerTitleBar";
-import { Trans, useTranslation } from "react-i18next";
-import { ChevronIcon } from "../assets/icons/ChevronIcon";
+import { useTranslation } from "react-i18next";
 import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
 import { useRouter } from "preact-router";
 import { deepEqual } from "../utils/arrays";
@@ -14,12 +13,16 @@ import { BaseStationGroup } from "../components/BaseStationGroups";
 import { useLighthouses } from "@hooks/useLighthouses";
 import { useLighthouseGroups } from "@hooks/useLighthouseGroups";
 import { useConfig } from "@src/lib/hooks/useConfig";
+import { WebsocketContext } from "@src/lib/context/websocket.context";
+import { StartScanFor10Seconds } from "../../wailsjs/go/main/App";
 export function BaseStationsList() {
 
-    const [searching, setSearching] = useState(false);
+    
     const baseStations = useLighthouses();
     const groups = useLighthouseGroups();
     const config = useConfig();
+    const { scanning } = useContext(WebsocketContext);
+
     const [, push] = useRouter();
     const [selectedBaseStations, setSelectedBaseStation] = useState([]);
     const { setItems, setCallbackOnLast } = useContainerTitlebar();
@@ -84,27 +87,23 @@ export function BaseStationsList() {
                         </motion.div>
                     )}
 
-                    {searching && !baseStations.length ? <motion.div key={99} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="flex flex-row justify-center">
-                            <Loader2Icon className={"animate-spin"} color="white" />
+                    {<motion.div key={99} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="flex flex-row justify-center" onClick={() => StartScanFor10Seconds()}>
+                            <RefreshCcw data-disabled={scanning} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`}/>
                         </div>
-                    </motion.div> : null}
-                    {!baseStations.length && !searching && <motion.div key={1337} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="poppins-regular text-center text-[14px] text-[#C6C6C6]">
+                    </motion.div>}
+                    {!baseStations.length && !scanning && <motion.div key={1337} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="poppins-regular text-center text-[14px] text-[#C6C6C6]">
                         {t("No base stations seem to be found, maybe other programs are connected to them?")}
                     </motion.div>}
                 </div>
 
 
             
-            {selectedBaseStations.length > 0 && baseStations.length > 0 ? <motion.div className="px-[24px] z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ ease: "linear"}} >
+            {selectedBaseStations.length > 0 && baseStations.length > 0 && <motion.div className="px-[24px] z-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ ease: "linear"}} >
                 <button  className="bg-[#1F1F1F] text-[#C6C6C6] poppins-regular w-full py-[4px] text-[14px] rounded-[6px] hover:bg-[#434343] duration-200 cursor-pointer active:bg-[#0D0D0D]!" onClick={() => groupBaseStations()}>
                     Create group
                 </button>
-            </motion.div> : <>
-                        {/* {baseStations.length + groups.length > 3 && <motion.div className="flex justify-center scale-175 py-1" animate={{ y: 5 }} transition={{ ease: "linear", duration: 2, repeat: Infinity, repeatType: "reverse" }}>
-                <ChevronIcon />
-            </motion.div>} */}
-            </>}
+            </motion.div>}
             
             </AnimatePresence>
 
