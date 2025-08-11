@@ -108,7 +108,6 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 			MAC: parsedMac,
 		},
 	}, bluetooth.ConnectionParams{})
-
 	if err != nil {
 		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
 
@@ -118,6 +117,9 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 	}
 
 	bs.adapter = adapter
+
+	defer conn.Disconnect()
+
 	bs.p = &conn
 
 	log.Printf("Connected to base station: %s, wake up: %+v\n", config.Id, wakeUp)
@@ -243,6 +245,8 @@ func (lv *LighthouseV2) Reconnect() {
 		lv.Reconnect()
 		return
 	}
+
+	defer conn.Disconnect()
 	lv.p = &conn
 
 	lv.FindService()
