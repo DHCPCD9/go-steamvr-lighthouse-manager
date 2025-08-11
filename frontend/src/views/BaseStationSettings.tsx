@@ -37,8 +37,9 @@ export function BaseStationSettingsPage() {
 
     }
 
-    const updateChannel = async (channel) => {
+    const updateChannel = async (data: { title: string, value: number }) => {
 
+        let channel = data.value;
         if (otherBaseStations.find(c => c.channel == channel)) return;
 
         if (channel < 1 && channel > 16) return alert("???");
