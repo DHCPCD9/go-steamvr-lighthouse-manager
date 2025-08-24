@@ -13,7 +13,6 @@ import (
 	_ "embed"
 
 	"github.com/gen2brain/beeep"
-	"github.com/getlantern/systray"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 	"tinygo.org/x/bluetooth"
@@ -93,8 +92,7 @@ func (a *App) startup(ctx context.Context) {
 		}
 	}
 
-	go systray.Run(a.trayReady, TrayExit)
-
+	go initializeSystray(a)
 	go a.InitBluetooth()
 	go StartHttp()
 
@@ -220,44 +218,6 @@ func (a *App) ForgetBaseStation(name string) {
 	config.ForgetBaseStation(name)
 
 	knownBaseStations.Remove(name)
-}
-
-// I REALLY SHOULD NOT DO THAT
-func (a *App) trayReady() {
-	systray.SetIcon(icon)
-
-	showWindowCh := systray.AddMenuItem("Show", "Show the window")
-
-	systray.AddSeparator()
-	wakeUpCh := systray.AddMenuItem("Wake up", "Wakes up all found Lighthouses.")
-	sleepCh := systray.AddMenuItem("Sleep", "Puts all found Lighthouses in sleep mode.")
-	systray.AddSeparator()
-
-	quitCh := systray.AddMenuItem("Quit", "Quits programm fully")
-
-	go func() {
-		for {
-			select {
-			case <-showWindowCh.ClickedCh:
-				wruntime.WindowShow(a.ctx)
-				continue
-			case <-wakeUpCh.ClickedCh:
-				a.WakeUpAllBaseStations()
-				continue
-			case <-sleepCh.ClickedCh:
-				a.SleepAllBaseStations()
-				continue
-			case <-quitCh.ClickedCh:
-				a.Shutdown()
-				continue
-			}
-		}
-	}()
-
-}
-
-func TrayExit() {
-	log.Println("Tray exit.")
 }
 
 func (a *App) Notify(title string, text string) {
@@ -506,7 +466,7 @@ func (a *App) Shutdown() {
 		}
 	}
 
-	systray.Quit()
+	shutdownSystray()
 	os.Exit(0)
 }
 

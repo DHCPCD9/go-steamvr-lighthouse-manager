@@ -13,7 +13,7 @@ require (
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/teivah/broadcast v0.1.0
 	github.com/tiendc/go-deepcopy v1.5.1
-	github.com/wailsapp/wails/v2 v2.10.1
+	github.com/wailsapp/wails/v2 v2.10.2
 	golang.org/x/sys v0.31.0
 	tinygo.org/x/bluetooth v0.11.0
 )
