@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useGroupedLighthouses } from "@hooks/useGroupedLighthouses";
 import { smoothResize } from "../../utils/windows";
 import { useLighthouseGroup } from "@src/lib/hooks/useLighthouseGroup";
+import { useTranslation } from "react-i18next";
 
 
 export function GroupedBaseStationView() {
@@ -13,6 +14,8 @@ export function GroupedBaseStationView() {
     const [{ matches }, push] = useRouter();
 
     if (!matches || !matches.name) return push("/");
+
+    const { t } = useTranslation();
     const { setItems } = useContainerTitlebar();
     const baseStations = useGroupedLighthouses(matches.name);
     const group = useLighthouseGroup(matches.name);
@@ -38,7 +41,7 @@ export function GroupedBaseStationView() {
                 )}
             </div>
             <button className="bg-[#1F1F1F] text-[#C6C6C6] poppins-regular w-full py-[4px] text-[14px] rounded-[6px] hover:bg-[#434343] duration-200 cursor-pointer active:bg-[#0D0D0D]!" onClick={() => push(`/groups/${matches.name}/settings`)}>
-                Edit group
+                {t("Edit group")}
             </button>
         </AnimatePresence>
     </div>)

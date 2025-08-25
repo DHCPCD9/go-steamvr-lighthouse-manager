@@ -24,5 +24,30 @@
     "Found base stations": "Found {{baseStations}} Lighthouse(s)",
     "Allow tray": "Allow tray",
     "Run the application in the tray when SteamVR is active or when the main window is closed.": "Run the application in the tray when SteamVR is active or when the main window is closed.",
-    "This platform is not supported": "This platform is not supported"
+    "This platform is not supported": "This platform is not supported",
+    "Updates": "Updates",
+    "Control application updates": "Control application updates",
+    "Force update": "Force update",
+    "Force update the app.": "Force update the app.",
+    "Once you have made that change, you will be asked to update the app.": "Once you have made that change, you will be asked to update the app.",
+    "Update branch": "Update branch",
+    "Manage Power (Wake up)": "Manage Power (Wake up)",
+    "Manage Power (Power off)": "Manage Power (Power off)",
+    "Awake this base station on SteamVR Launch": "Awake this base station on SteamVR Launch",
+    "Power off this base station on SteamVR Exit": "Power off this base station on SteamVR Exit",
+    "Forget this base station": "Forget this base station",
+    "Nickname": "Nickname",
+    "Base station nickname to display": "Base station nickname to display",
+    "Channels": "Channels",
+    "New Group": "New Group",
+    "Edit group": "Edit group",
+    "Group name": "Group name",
+    "Display group name": "Display group name",
+    "Delete group": "Delete group",
+    "Manage Power (Power on)": "Manage Power (Power on)",
+    "Wake up base stations on SteamVR Launch": "Wake up base stations on SteamVR Launch",
+    "Manage Power (Power Off)": "Manage Power (Power off)",
+    "Power off base stations on SteamVR Exit": "Power off base stations on SteamVR exit"
+    
+
 }

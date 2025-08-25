@@ -48,7 +48,7 @@ export function BaseStationsList() {
     const groupBaseStations = async () => {
 
         if (!selectedBaseStations.length) return;
-        let newName = "New Group"
+        let newName = t("New Group");
         let i = 0;
 
 
@@ -76,10 +76,10 @@ export function BaseStationsList() {
             setCallbackOnLast(() => {
                 setSelectedBaseStation([]);
             })
-            return setItems([{ text: "Devices", link: "/" }, { text: `${selectedBaseStations.length} Selected`, link: "/" }])
+            return setItems([{ text: t("Devices"), link: "/" }, { text: `${selectedBaseStations.length} Selected`, link: "/" }])
         }
 
-        setItems([{ text: "Devices", link: "/" }])
+        setItems([{ text: t("Devices"), link: "/" }])
     }, []);
 
 

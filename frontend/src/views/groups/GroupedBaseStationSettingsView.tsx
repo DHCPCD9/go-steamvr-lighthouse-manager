@@ -71,15 +71,15 @@ export function GroupedBaseStationSettings() {
         </div>
 
         <div className="text-white poppins-regular px-[24px]">
-            <CheckboxOption title={"Manage Power (Power on)"} description={"Wake up base stations on SteamVR Exit"} value={group && ((group.managed_flags & 2) > 0)} setValue={() => UpdateManageFlags(2)} />
+            <CheckboxOption title={t("Manage Power (Power on)")} description={t("Wake up base stations on SteamVR Launch")} value={group && ((group.managed_flags & 2) > 0)} setValue={() => UpdateManageFlags(2)} />
         </div>
 
         <div className="text-white poppins-regular px-[24px]">
-            <CheckboxOption title={"Manage Power (Power off)"} description={"Power off base stations on SteamVR Exit"} value={group && ((group.managed_flags & 4) > 0)} setValue={() => UpdateManageFlags(4)} />
+            <CheckboxOption title={t("Manage Power (Power off)")} description={t("Power off base stations on SteamVR Exit")} value={group && ((group.managed_flags & 4) > 0)} setValue={() => UpdateManageFlags(4)} />
         </div>
         <div className="px-[24px]">
         <button className="bg-[#1F1F1F] text-[#C6C6C6] poppins-regular w-full py-[4px] text-[14px] rounded-[6px] hover:bg-[#434343] duration-200 cursor-pointer active:bg-[#0D0D0D]!" onClick={deleteGroup}>
-            Delete group
+            {t("Delete group")}
         </button>
         </div>
     </div>)

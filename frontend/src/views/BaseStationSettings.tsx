@@ -80,16 +80,16 @@ export function BaseStationSettingsPage() {
         </div>
 
         <div className="text-white poppins-regular px-[24px]">
-            <CheckboxOption title={"Manage Power (Wake up)"} description={"Awake this base station on SteamVR Launch"} value={lighthouse && ((lighthouse.managed_flags & 2) > 0)} setValue={() => UpdateManageFlags(2)} />
+            <CheckboxOption title={t("Manage Power (Wake up)")} description={t("Awake this base station on SteamVR Launch")} value={lighthouse && ((lighthouse.managed_flags & 2) > 0)} setValue={() => UpdateManageFlags(2)} />
         </div>
 
         <div className="text-white poppins-regular px-[24px]">
-            <CheckboxOption title={"Manage Power (Power off)"} description={"Power off this base station on SteamVR Exit"} value={lighthouse && ((lighthouse.managed_flags & 4) > 0)} setValue={() => UpdateManageFlags(4)} />
+            <CheckboxOption title={t("Manage Power (Power off)")} description={t("Power off this base station on SteamVR Exit")} value={lighthouse && ((lighthouse.managed_flags & 4) > 0)} setValue={() => UpdateManageFlags(4)} />
         </div>
 
         <div className="px-[24px]">
         <button className="bg-[#1F1F1F] text-[#C6C6C6] poppins-regular w-full py-[4px] text-[14px] rounded-[6px] hover:bg-[#434343] duration-200 cursor-pointer active:bg-[#0D0D0D]!" onClick={forgetBaseStation}>
-            Forget this base station
+            {t("Forget this base station")}
         </button>
         </div>
     </div>)
