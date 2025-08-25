@@ -23,5 +23,6 @@
     "Window was hidden in the tray.": "窗口被隐藏在托盘中",
     "Found base stations": "发现 {{baseStations}} 个基站",
     "Allow tray": "允许托盘图标",
-    "Run the application in the tray when SteamVR is active or when the main window is closed.": "当SteamVR活跃或主窗口关闭时切换至在托盘中运行"
+    "Run the application in the tray when SteamVR is active or when the main window is closed.": "当SteamVR活跃或主窗口关闭时切换至在托盘中运行",
+    "This platform is not supported": "This platform is not supported"
 }

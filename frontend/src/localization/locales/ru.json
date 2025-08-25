@@ -24,5 +24,6 @@
     "Window was hidden in the tray.": "Window was hidden in the tray.",
     "Found base stations": "Найдено {{baseStations}} базовых станции",
     "Allow tray": "Разрешить трей",
-    "Run the application in the tray when SteamVR is active or when the main window is closed.": "Запускать приложение в трее когда SteamVR активен, или закрыто главное."
+    "Run the application in the tray when SteamVR is active or when the main window is closed.": "Запускать приложение в трее когда SteamVR активен, или закрыто главное.",
+    "This platform is not supported": "This platform is not supported"
 }

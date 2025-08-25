@@ -23,5 +23,6 @@
     "Window was hidden in the tray.": "Window was hidden in the tray.",
     "Found base stations": "Found {{baseStations}} Lighthouse(s)",
     "Allow tray": "Allow tray",
-    "Run the application in the tray when SteamVR is active or when the main window is closed.": "Run the application in the tray when SteamVR is active or when the main window is closed."
+    "Run the application in the tray when SteamVR is active or when the main window is closed.": "Run the application in the tray when SteamVR is active or when the main window is closed.",
+    "This platform is not supported": "This platform is not supported"
 }

@@ -131,13 +131,13 @@ export function SoftwareSettings() {
                         <span className='text-white text-[14px] poppins-regular'>
                             {t("Allow tray")}
                         </span>
-                        <span className='text-white text-[12px] opacity-80 poppins-regular'>
-                            {t("Run the application in the tray when SteamVR is active or when the main window is closed.")}
-                        </span>
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-white text-[12px] opacity-80 poppins-regular'>
+                            {platform.system != "darwin" ? t("Run the application in the tray when SteamVR is active or when the main window is closed.") : t("This platform is not supported")}
+                        </motion.span>
                     </div>
                 </div>
                 <div>
-                    <Checkbox value={config?.allow_tray ?? false} SetValue={toggleAllowTray} />
+                    <Checkbox disabled={platform.system == "darwin"} value={config?.allow_tray ?? false} SetValue={toggleAllowTray} />
                 </div>
             </div>
 
