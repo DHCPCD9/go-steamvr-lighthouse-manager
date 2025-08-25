@@ -107,8 +107,12 @@
     font-weight: 900;
     font-style: italic;
   }
-  
 
+@layer components {
+  .clickable {
+    @apply bg-[#1F1F1F] p-[6px] items-center hover:bg-[#434343] data-[selected="true"]:bg-[#434343] duration-200 cursor-pointer active:bg-[#1F1F1F]!;
+  }
+}
 body {
     overflow: hidden;
 }
@@ -116,3 +120,4 @@ body {
 *[data-draggable="true"] {
   app-region: drag;
 }
+
