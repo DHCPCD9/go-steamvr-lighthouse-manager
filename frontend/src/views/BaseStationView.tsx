@@ -1,7 +1,7 @@
 import { BaseStation } from "../components/BaseStation";
 import { useContext, useEffect, useState } from 'preact/hooks'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, Loader, Loader2Icon, PencilIcon, PencilOffIcon, PlusIcon, RefreshCcw } from "lucide-preact";
+import { Copy, Download, Loader, Loader2Icon, PencilIcon, PencilOffIcon, PlusIcon, RefreshCcw } from "lucide-preact";
 import { AddBaseStationToGroup, CreateGroup, GetConfiguration, InitBluetooth } from "@src/lib/native/index";
 import { smoothResize } from "../utils/windows";
 import { ContainerTitleBar } from "../components/ContainerTitleBar";
@@ -14,20 +14,20 @@ import { useLighthouses } from "@hooks/useLighthouses";
 import { useLighthouseGroups } from "@hooks/useLighthouseGroups";
 import { useConfig } from "@src/lib/hooks/useConfig";
 import { WebsocketContext } from "@src/lib/context/websocket.context";
-import { StartScanFor10Seconds } from "../../wailsjs/go/main/App";
+import { ForceUpdate, StartScanFor10Seconds } from "../../wailsjs/go/main/App";
 export function BaseStationsList() {
 
 
     const baseStations = useLighthouses();
     const groups = useLighthouseGroups();
     const config = useConfig();
-    const { scanning } = useContext(WebsocketContext);
+    const { scanning, update } = useContext(WebsocketContext);
 
     const [, push] = useRouter();
     const [selectedBaseStations, setSelectedBaseStation] = useState([]);
     const { setItems, setCallbackOnLast } = useContainerTitlebar();
     const [editModeEnabled, setEditModeEnabled] = useState(false);
-    
+
 
     const { t } = useTranslation();
 
@@ -104,27 +104,33 @@ export function BaseStationsList() {
 
                 <div class={"flex flex-row justify-end px-[24px] pb-[12px] gap-2"}>
                     <AnimatePresence>
-                        {!editModeEnabled && <motion.div key={99} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        {update && !editModeEnabled && 
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} data-tooltip={t("Update is ready!")} key={"update"} className={`tooltip flex flex-row justify-center clickable rounded-md bg-[#1D81FF]`} onClick={() => ForceUpdate()}>
+                            <Download size={24} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40`} />
+                        </motion.div>}
+
+                        {!editModeEnabled && <motion.div key={"refresh"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                             <div className="flex flex-row justify-center clickable rounded-md" onClick={() => StartScanFor10Seconds()}>
                                 <RefreshCcw size={24} data-disabled={scanning} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`} />
                             </div>
                         </motion.div>}
 
-                        {toggleEditMode && <div className={`flex flex-row justify-center clickable rounded-md data-[disabled="true"]:opacity-50 data-[disabled="true"]:cursor-not-allowed`} data-disabled={selectedBaseStations.length < 1} onClick={() => groupBaseStations()}>
-                            <PlusIcon size={24} data-disabled={scanning} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`} />
+                        {toggleEditMode && <div key={"group"} className={`flex flex-row justify-center clickable rounded-md data-[disabled="true"]:opacity-50 data-[disabled="true"]:cursor-not-allowed`} data-disabled={selectedBaseStations.length < 1} onClick={() => groupBaseStations()}>
+                            <PlusIcon size={24} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40`} />
                         </div>}
 
-                        <div  data-active={editModeEnabled} className={`flex flex-row justify-center clickable rounded-md data-[active="true"]:bg-[#1D81FF]`} onClick={() => toggleEditMode()}>
+
+
+                        <div key={"edit"} data-active={editModeEnabled} className={`flex flex-row justify-center clickable rounded-md data-[active="true"]:bg-[#1D81FF]`} onClick={() => toggleEditMode()}>
                             <AnimatePresence mode="popLayout">
 
                                 {!editModeEnabled ?
-                                    <motion.div key={"edit"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, rotate: -180 }} transition={{ type: "tween", easings: ["linear"]}} >
-                                        <PencilIcon size={24} data-active={editModeEnabled} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`} /> 
+                                    <motion.div key={"edit"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, rotate: -180 }} transition={{ type: "tween", easings: ["linear"] }} >
+                                        <PencilIcon size={24} data-active={editModeEnabled} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`} />
                                     </motion.div> :
-                                     <motion.div key={"close"} initial={{ opacity: 0, rotate: -180 }} animate={{ opacity: 1, rotate: -365 }} exit={{ opacity: 0 }} transition={{ type: "tween", easings: ["linear"]}}>
-                                        <PencilOffIcon size={24} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`} /> 
+                                    <motion.div key={"close"} initial={{ opacity: 0, rotate: -180 }} animate={{ opacity: 1, rotate: -365 }} exit={{ opacity: 0 }} transition={{ type: "tween", easings: ["linear"] }}>
+                                        <PencilOffIcon size={24} className={`text-white/80 duration-200 hover:text-white active:text-white/80 data-[disabled="false"]:cursor-pointer data-[disabled="true"]:text-white/40 data-[disabled="true"]:animate-spin`} />
                                     </motion.div>}
-
                             </AnimatePresence>
                         </div>
 

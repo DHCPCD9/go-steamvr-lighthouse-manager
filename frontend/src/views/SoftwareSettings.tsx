@@ -149,7 +149,7 @@ export function SoftwareSettings() {
                             {t("Updates")}
                         </span>
                         <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-white text-[12px] opacity-80 poppins-regular'>
-                            {t("Force update or set a update branch")}
+                            {t("Control application updates")}
                         </motion.span>
                     </div>
                 </div>

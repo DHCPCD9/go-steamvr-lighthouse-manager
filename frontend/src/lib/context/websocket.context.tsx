@@ -1,6 +1,6 @@
 import { createContext } from 'preact'
 import { useEffect, useRef, useState, useCallback, useMemo } from 'preact/hooks'
-import type { ClientPayload, ClientPlatformPayload, Configuration, LighthouseGroup, LighthouseStation, WebsocketPayload } from "@src/lib/types/index"
+import type { ClientPayload, ClientPlatformPayload, ClientUpdateFoundPayload, Configuration, LighthouseGroup, LighthouseStation, WebsocketPayload } from "@src/lib/types/index"
 import type { ReactNode } from 'react'
 import { eventHandlers } from './handlers/index'
 
@@ -16,7 +16,8 @@ export interface WebsocketContextType {
     },
     platform: ClientPlatformPayload['data'],
     scanning: boolean,
-    send: (payload: ClientPayload) => void
+    send: (payload: ClientPayload) => void,
+    update: ClientUpdateFoundPayload['data'] | null
 }
 
 const DEFAULT_CONTEXT_VALUE: WebsocketContextType = {
@@ -45,7 +46,8 @@ const DEFAULT_CONTEXT_VALUE: WebsocketContextType = {
     send: () => {
         console.warn("WebSocket not ready!")
     },
-    scanning: false
+    scanning: false,
+    update: null
 };
 
 export const WebsocketContext = createContext<WebsocketContextType>(DEFAULT_CONTEXT_VALUE);
@@ -55,7 +57,6 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
     const ws = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<number | null>(null);
     
-    // Оптимизированный обработчик сообщений
     const handleMessage = useCallback((data: WebsocketPayload) => {
         const handler = eventHandlers[data.event];
         if (handler) {
@@ -68,7 +69,6 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    // Функция отправки сообщений
     const send = useCallback((payload: ClientPayload) => {
         if (ws.current?.readyState === WebSocket.OPEN) {
             ws.current.send(JSON.stringify(payload));
@@ -77,7 +77,6 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    // Функция создания WebSocket соединения
     const createSocket = useCallback((): WebSocket => {
         const socket = new WebSocket("ws://localhost:15065/api/lighthouse/websocket");
 

@@ -155,6 +155,11 @@ func reader(conn *websocket.Conn) {
 		"status": PREVIOUS_STEAMVR_VALUE,
 	}))
 
+	//Checking for updates
+	if update := FindUpdates(); update != nil && update.Available {
+		conn.WriteJSON(preparePacket("client.updates.new", update))
+	}
+
 	go func() {
 		for {
 			listener := WEBSOCKET_BROADCAST.Listener(1)

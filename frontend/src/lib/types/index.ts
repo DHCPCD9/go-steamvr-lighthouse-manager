@@ -129,6 +129,16 @@ export interface ClientScanPayload extends WebsocketPayloadBase {
 }
 
 
+export interface ClientUpdateFoundPayload extends WebsocketPayloadBase {
+  event: 'client.updates.new',
+  data: {
+    available: boolean;
+    branch: string;
+    version: string;
+  }
+}
+
+
 
 export type WebsocketPayload =
   | ConfigurePayload
@@ -141,6 +151,7 @@ export type WebsocketPayload =
   | GroupsUpdatedFlagsPayload
   | GroupRemovePayload
   | LighthouseFoundPayload
+  | ClientUpdateFoundPayload
   | LighthouseUpdatePayload;
 
 export type ClientPayload = LighthousePowerStateUpdatePayload;

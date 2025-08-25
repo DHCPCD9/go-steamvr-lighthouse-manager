@@ -38,7 +38,7 @@ export function SoftwareUpdatesView() {
     return (<div className="poppins-semibold text-white py-[12px] px-[24px] select-none">
         <div className='flex flex-col gap-[8px] w-full pt-[8px]'>
 
-            <DropdownOption title={t("Updates branch")} description={t("Once you have made that change, you will be asked to update the app.")} setValue={updateBranch} value={{ title: config.branch, value: config.branch }} items={[{ title: "beta", value: "beta" }, { title: "main", value: "main" }]} open={updateDropdownOpen} setOpen={setUpdateDropdownOpen} lockedValues={[]} />
+            <DropdownOption title={t("Update branch")} description={t("Once you have made that change, you will be asked to update the app.")} setValue={updateBranch} value={{ title: config.branch, value: config.branch }} items={[{ title: "beta", value: "beta" }, { title: "main", value: "main" }]} open={updateDropdownOpen} setOpen={setUpdateDropdownOpen} lockedValues={[]} />
             <div className='flex flex-row justify-between items-center w-full bg-[#1F1F1F] duration-200 cursor-pointer p-[16px] rounded-[6px]'>
                 <div>
                     <div className='flex flex-col'>
@@ -46,7 +46,7 @@ export function SoftwareUpdatesView() {
                             {t("Force update")}
                         </span>
                         <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='text-white text-[12px] opacity-80 poppins-regular'>
-                            {t("Force update app.")}
+                            {t("Force update the app.")}
                         </motion.span>
                     </div>
                 </div>

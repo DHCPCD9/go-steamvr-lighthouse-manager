@@ -26,3 +26,12 @@ export const clientScanHandler: EventHandler = (data) => {
         scanning: data.data.status
     });
 };
+
+export const clientUpdateFoundHandler: EventHandler = (data) => {
+    if (!data?.data) return;
+    
+    return (prevState) => ({
+        ...prevState,
+        update: data.data
+    });
+}

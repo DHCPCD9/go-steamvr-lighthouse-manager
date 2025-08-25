@@ -23,8 +23,44 @@ import (
 var FLAGS_NO_UPDATE string = "NO_UPDATES"
 var client = github.NewClient(nil)
 
-func ForceUpdate() {
+func FindUpdates() *UpdateName {
+	log.Println("Checking for updates...")
+	releases, _, err := client.Repositories.ListReleases(context.Background(), "DHCPCD9", "go-steamvr-lighthouse-manager", &github.ListOptions{})
+	if err != nil {
+		log.Println("Failed to check updates: " + err.Error())
+		return nil
+	}
 
+	if config == nil {
+		log.Println("Failed to check updates: config is nil")
+		return nil
+	}
+
+	for _, v := range releases {
+		if strings.HasSuffix(*v.TagName, fmt.Sprintf("-%s", config.VersionBranch)) {
+			if withReplacedSuffix, _ := strings.CutSuffix(*v.TagName, fmt.Sprintf("-%s", config.VersionBranch)); withReplacedSuffix != BINARY_VERSION {
+				log.Printf("Update available: %s (current: %s)\n", *v.TagName, BINARY_VERSION)
+				return &UpdateName{
+					Available: true,
+					Version:   *v.TagName,
+					Branch:    config.VersionBranch,
+				}
+			}
+			break
+		}
+	}
+
+	log.Println("No updates found")
+
+	return &UpdateName{
+		Available: false,
+		Version:   BINARY_VERSION,
+		Branch:    config.VersionBranch,
+	}
+
+}
+
+func ForceUpdate() {
 	releases, _, err := client.Repositories.ListReleases(context.Background(), "DHCPCD9", "go-steamvr-lighthouse-manager", &github.ListOptions{})
 
 	if err != nil {

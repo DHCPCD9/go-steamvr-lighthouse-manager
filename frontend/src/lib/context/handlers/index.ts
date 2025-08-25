@@ -7,7 +7,7 @@ import {
     groupLighthousesAddedHandler, 
     groupUpdateFlagsHandler 
 } from './group';
-import { clientConfigureHandler, clientPlatformHandler, clientScanHandler } from './client';
+import { clientConfigureHandler, clientPlatformHandler, clientScanHandler, clientUpdateFoundHandler } from './client';
 import { steamvrStatusHandler } from './steamvr';
 
 export const eventHandlers: EventHandlerMap = {
@@ -22,4 +22,5 @@ export const eventHandlers: EventHandlerMap = {
     'client.platform': clientPlatformHandler,
     'client.scan': clientScanHandler,
     'steamvr.status': steamvrStatusHandler,
+    'client.updates.new': clientUpdateFoundHandler
 };

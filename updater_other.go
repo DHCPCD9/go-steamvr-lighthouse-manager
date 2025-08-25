@@ -10,3 +10,7 @@ func ForceUpdate() {
 func IsUpdatingSupported() bool {
 	return false
 }
+
+func FindUpdates() *UpdateName {
+	return nil
+}
