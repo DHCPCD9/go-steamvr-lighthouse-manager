@@ -58,7 +58,6 @@ export const WebsocketProvider = ({ children }: { children: ReactNode }) => {
     const reconnectTimeoutRef = useRef<number | null>(null);
     
     const handleMessage = useCallback((data: WebsocketPayload) => {
-        console.log(data);
         const handler = eventHandlers[data.event];
         if (handler) {
             const stateUpdater = handler(data);
