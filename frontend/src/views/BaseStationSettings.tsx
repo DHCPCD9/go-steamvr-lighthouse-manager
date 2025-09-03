@@ -13,6 +13,7 @@ import { CheckboxOption } from "../components/CheckboxOption";
 import { useContainerTitlebar } from "@src/lib/stores/titlebar.store";
 import { useLighthouse } from "@hooks/useLighthouse";
 import { useLighthouses } from "@hooks/useLighthouses";
+import { useDebounce } from "@uidotdev/usehooks";
 
 export function BaseStationSettingsPage() {
 
@@ -34,7 +35,13 @@ export function BaseStationSettingsPage() {
     }, [channelChangeActive]);
 
     const setNickname = async (e) => {
+        if (!e) {
+            UpdateBaseStationParam(lighthouse.id, "name", lighthouse.id);
+            return;
+        }
 
+        if (e.length > 16) return alert(t("Nickname too long! Max 16 characters."));
+        await UpdateBaseStationParam(lighthouse.id, "name", e);
     }
 
     const updateChannel = async (data: { title: string, value: number }) => {
@@ -69,7 +76,7 @@ export function BaseStationSettingsPage() {
     if (!lighthouse) return <></>
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white poppins-regular px-[24px]">
-            <InputOption maxLength={16} key={"nickname"} title={t("Nickname")} description={t("Base station nickname to display")} placeholder={lighthouse && lighthouse.id} value={lighthouse.name} setValue={setNickname} />
+            <InputOption onUnfocus={setNickname} maxLength={16} key={"nickname"} title={t("Nickname")} description={t("Base station nickname to display")} placeholder={lighthouse && lighthouse.id} value={lighthouse.name} />
         </div>
         <div className="text-white poppins-regular px-[24px]">
             <DropdownOption key={"dropdown"} setValue={updateChannel} lockedValues={otherBaseStations ? otherBaseStations.map(c => c.channel).map(c => {

@@ -1,7 +1,4 @@
-import { ChevronIcon } from "../assets/icons/ChevronIcon";
-import { AnimatePresence, motion } from "framer-motion"
-
-export function InputOption({ title, description, value, setValue, placeholder, maxLength }: { title: string, description: string, value: any, setValue: (value: any) => void, placeholder?: any, maxLength: number }) {
+export function InputOption({ title, description, value, setValue, placeholder, maxLength, onUnfocus }: { title: string, description: string, value: any, setValue?: (value: any) => void, onUnfocus?: (value: any) => void, placeholder?: any, maxLength: number }) {
 
 
     return <div className="text-white poppins-regular">
@@ -22,7 +19,7 @@ export function InputOption({ title, description, value, setValue, placeholder, 
                         <ChevronIcon />
                     </div>
                 </button> */}
-                    <input maxLength={maxLength} onChange={(e: any) => setValue(e.target.value)} value={value} className="w-[260px] h-[24px] bg-[#121212] text-[#888888] rounded-md text-[12px] px-[12px] py-[3px] focus:outline-none poppins-medium" placeholder={placeholder}>
+                    <input maxLength={maxLength} onFocusOut={(e: any) => onUnfocus && onUnfocus(e.target.value)} onChange={(e: any) => setValue && setValue(e.target.value)} value={value} className="w-[260px] h-[24px] bg-[#121212] text-[#888888] rounded-md text-[12px] px-[12px] py-[3px] focus:outline-none poppins-medium" placeholder={placeholder}>
 
                     </input>
                 </div>

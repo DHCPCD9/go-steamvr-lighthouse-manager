@@ -23,7 +23,7 @@ export function GroupedBaseStationSettings() {
     const [name, setName] = useState(group?.name??"");
 
     const { t } = useTranslation();
-    const groupName = useDebounce(name, 1000);
+    const groupName = useDebounce(name, 0);
     
     useEffect(() => {
 
@@ -67,7 +67,7 @@ export function GroupedBaseStationSettings() {
 
     return (<div className="flex flex-col gap-2 select-none">
         <div className="text-white poppins-regular px-[24px]">
-            <InputOption maxLength={16} key={"nickname"} title={t("Group name")} description={t("Display group name.")} value={name} setValue={(e: any) => setName(e)} />
+            <InputOption maxLength={16} key={"nickname"} title={t("Group name")} description={t("Display group name.")} value={name} onUnfocus={(e: any) => setName(e)} />
         </div>
 
         <div className="text-white poppins-regular px-[24px]">
