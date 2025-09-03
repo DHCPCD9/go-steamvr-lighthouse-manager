@@ -58,7 +58,7 @@ type LighthouseV2 struct {
 
 func PreloadBaseStation(config BaseStationConfiguration, wakeUp bool) BaseStation {
 	lh := &LighthouseV2{
-		Name:             config.Nickname,
+		Name:             config.Name,
 		Id:               config.Id,
 		Status:           "preloaded",
 		CachedPowerState: -1,
@@ -165,6 +165,7 @@ func (lv *LighthouseV2) ScanCharacteristics() bool {
 	lv.ValidLighthouse = lv.modeCharacteristic != nil && lv.powerStateCharacteristic != nil
 
 	if lv.ValidLighthouse {
+		log.Println("Sending ready...")
 		lv.Status = "ready"
 		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "ready"))
 		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", lv.readChannel()))

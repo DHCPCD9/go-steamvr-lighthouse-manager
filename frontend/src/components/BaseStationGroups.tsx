@@ -3,12 +3,20 @@ import { GroupedBaseStations } from "../assets/icons/GroupedBaseStations";
 import { useGroupedLighthouses } from "@src/lib/hooks/useGroupedLighthouses";
 import type { LighthouseGroup } from "@src/lib/types";
 import { useTranslation } from "react-i18next";
+import { AnimatePresence, motion } from "framer-motion";
+import { CirclePower, Settings } from "lucide-preact";
 export function BaseStationGroup({ group, id }: { id: string, group: LighthouseGroup }) {
 
     const baseStations = useGroupedLighthouses(id);
     const [, push] = useRouter();
     const { t } = useTranslation();
 
+
+    const updatePowerState = async () => {
+        for(const bs of baseStations) {
+            // if (bs.power_state)
+        }
+    }
 
     return (<div className={`text-white flex flex-row justify-between poppins-medium bg-[#1F1F1F] rounded-sm p-[16px] items-center hover:bg-[#434343] data-[selected="true"]:bg-[#434343] duration-200 cursor-pointer active:bg-[#1F1F1F]!`}>
         <div className="flex flex-row gap-[16px] items-center" onClick={() => {
@@ -23,30 +31,24 @@ export function BaseStationGroup({ group, id }: { id: string, group: LighthouseG
 
                 </span>
                 <span className="text-[#C6C6C6]">
-                    {baseStations.length > 0 && <span>{t("c")}: {baseStations.map(c => c.channel).join(", ")}</span>}
+                    {baseStations.length > 0 && <span>{t("Channels")}: {baseStations.map(c => c.channel).join(", ")}</span>}
                 </span>
             </div>
         </div>
 
         <div className="flex flex-row gap-[8px] [&>*]:flex [&>*]:items-center">
-            {/* <AnimatePresence>
-            {isAwoke && station.status == "ready" ? <motion.div key={"identitfy"} initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                <button  className={"opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 cursor-pointer p-1 border-[#C6C6C6] border-none rounded-md"} onClick={identitify} disabled={identitfyDisabled}>
-                    <Eye color="#C6C6C6" strokeWidth={2}  />
-                </button>
-            </motion.div>
-            : null}
+            <AnimatePresence>
 
             <motion.div key={"awoke"}>
-                {station.status == "ready" && <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 cursor-pointer p-1 border-[#C6C6C6] border-none rounded-md" onClick={updatePowerState}>
+                <button className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 cursor-pointer p-1 border-[#C6C6C6] border-none rounded-md" onClick={updatePowerState}>
                    <CirclePower color="#C6C6C6" strokeWidth={2}  />
-                </button> }
+                </button>
             </motion.div>
 
-            <button key={"Settings"} className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 cursor-pointer p-1 border-[#C6C6C6] border-none rounded-md" onClick={() => route(`/devices/${station.id}`)} >
+            <button key={"Settings"} className="opacity-75 hover:opacity-100 duration-150 disabled:opacity-25 cursor-pointer p-1 border-[#C6C6C6] border-none rounded-md" onClick={() => push(`/groups/${id}`)} >
                 <Settings color="#C6C6C6" strokeWidth={2} />
             </button>
-            </AnimatePresence> */}
+            </AnimatePresence>
         </div>
     </div>)
 }

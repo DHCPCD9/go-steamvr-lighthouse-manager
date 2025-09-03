@@ -26,7 +26,7 @@ type BaseStationConfiguration struct {
 	MacAddress   string    `json:"mac_address"`
 	LastSeen     time.Time `json:"last_seen"`
 	LastChannel  int       `json:"channel"`
-	Nickname     string    `json:"nickname"`
+	Name         string    `json:"nickname"`
 	Id           string    `json:"id"`
 	ManagedFlags int       `json:"managed_flags"`
 }
@@ -142,6 +142,11 @@ func (c *Configuration) UpdateBaseStationValue(baseStation string, jsonName stri
 		return
 	}
 	UpdateValueOfInterface(c.KnownBaseStations[baseStation], jsonName, value)
+
+	if jsonName == "nickname" {
+		jsonName = "name"
+	}
+
 	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(baseStation, fmt.Sprintf("lighthouse.update.%s", jsonName), jsonName, value))
 	c.Save()
 }
@@ -162,7 +167,7 @@ func (c *Configuration) SaveBaseStation(baseStation *BaseStation) {
 		MacAddress:   bs.GetMAC(),
 		LastSeen:     time.Now(),
 		LastChannel:  bs.GetChannel(),
-		Nickname:     bs.GetId(),
+		Name:         bs.GetId(),
 		Id:           bs.GetId(),
 		ManagedFlags: 6,
 	}

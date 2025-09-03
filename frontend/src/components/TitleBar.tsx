@@ -44,35 +44,12 @@ export function TitleBar() {
             if (steamVRLaunched && !previousSteamVRState) {
                 console.log("Waking up")
                 await bulkUpdate("awake", 2);
-
-                for (const value of Object.values(groups)) {
-                    if (value.managed_flags & 2) {
-                        for (const lighthouseSerial of value.base_stations) {
-                            let lighthouse = lighthouses.find(c => c.id == lighthouseSerial);
-                            if (lighthouse) {
-                                await ChangeBaseStationPowerStatus(lighthouse.id, "awake");
-                            }
-                        }
-                    }
-                }
                 setPreviousSteamVRState(steamVRLaunched);
                 return;
             }
 
             console.log("Putting in sleep mode")
             await bulkUpdate("sleep", 4);
-
-              for (const value of Object.values(groups)) {
-                    if (value.managed_flags & 4) {
-                        for (const lighthouseSerial of value.base_stations) {
-                            let lighthouse = lighthouses.find(c => c.id == lighthouseSerial);
-                            if (lighthouse) {
-                                await ChangeBaseStationPowerStatus(lighthouse.id, "sleep");
-                            }
-                        }
-                    }
-                }
-
             setPreviousSteamVRState(steamVRLaunched);
         })()
     }, [steamVRLaunched]);

@@ -267,13 +267,17 @@ func (a *App) UpdateBaseStationParam(name string, param string, value interface{
 		return
 	}
 
-	config.UpdateBaseStationValue(name, param, value)
-
 	baseStation := *bs
 
-	if param == "nickname" {
+	if param == "name" {
 		baseStation.SetName(value.(string))
+		config.UpdateBaseStationValue(name, "nickname", value)
+		return
+
 	}
+
+	config.UpdateBaseStationValue(name, param, value)
+
 }
 
 func (a *App) GetConfiguration() *Configuration {
