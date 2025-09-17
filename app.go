@@ -84,6 +84,7 @@ func (a *App) startup(ctx context.Context) {
 	}()
 
 	config = GetConfiguration()
+
 	go a.preloadBaseStations()
 
 	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
@@ -93,7 +94,6 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	go initializeSystray(a)
-	go a.InitBluetooth()
 	go StartHttp()
 
 }
@@ -196,6 +196,7 @@ func (a *App) UpdateGroupManagedFlags(id string, managed_flags int) string {
 }
 
 func (a *App) preloadBaseStations() {
+	a.InitBluetooth()
 
 	steamVrRunning, _ := isProcRunning("vrserver.exe")
 	for name, baseStation := range config.KnownBaseStations {
@@ -343,6 +344,7 @@ func (a *App) InitBluetooth() bool {
 	}
 
 	if err := adapter.Enable(); err != nil {
+		log.Fatalln("Failed to enable bluetooth adapter:", err)
 		return false
 	}
 

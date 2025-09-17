@@ -25,6 +25,7 @@ var STEAMVR_WATCHING = false
 var WEBSOCKET_BROADCAST = broadcast.NewRelay[interface{}]()
 var STEAMVR_CANCEL_SOCKET = context.Background()
 var STEAMVR_TICKER = time.NewTicker(time.Second)
+var ADAPTER_NOT_FOUND = false
 
 func StartHttp() {
 	http.HandleFunc("/api/lighthouse/websocket", handleLighthouseSocket)

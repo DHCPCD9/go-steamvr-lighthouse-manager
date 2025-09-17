@@ -1,5 +1,5 @@
-//go:build !darwin
-// +build !darwin
+//go:build windows
+// +build windows
 
 package main
 
@@ -124,11 +124,64 @@ func (lv *LighthouseV2) StartCaching() {
 	// 		_, err = lv.powerStateCharacteristic.Read(data)
 
 	// 		if err != nil {
-	// 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
+	// WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
 	// 			lv.Reconnect()
 	// 			break
 	// 		}
 	// 		time.Sleep(time.Second)
 	// 	}
 	// }()
+}
+
+func (lv *LighthouseV2) SetPowerState(state byte) {
+
+	if !lv.ValidLighthouse {
+		return
+	}
+
+	if lv.powerStateCharacteristic == nil {
+		log.Printf("PowerStateCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		lv.SetPowerState(state)
+		return
+	}
+
+	lv.powerStateCharacteristic.Write([]byte{state})
+}
+
+func (lv *LighthouseV2) Identitfy() {
+
+	if !lv.ValidLighthouse {
+		return
+	}
+
+	if lv.identifyCharacteristic == nil {
+		log.Printf("IdentifyCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		lv.Identitfy()
+		return
+	}
+
+	lv.identifyCharacteristic.WriteWithoutResponse([]byte{0x01})
+}
+
+func (lv *LighthouseV2) SetChannel(channel int) {
+
+	if !lv.ValidLighthouse {
+		return
+	}
+
+	if lv.modeCharacteristic == nil {
+		log.Printf("ModeCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
+		lv.ScanCharacteristics()
+		lv.SetChannel(channel)
+		return
+	}
+
+	_, err := lv.modeCharacteristic.Write([]byte{byte(channel)})
+	if err != nil {
+		log.Printf("Write error: %v", err)
+	}
+
+	lv.CachedChannel = channel
 }

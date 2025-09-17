@@ -182,61 +182,8 @@ func (lv *LighthouseV2) GetChannel() int {
 	return lv.CachedChannel
 }
 
-func (lv *LighthouseV2) SetChannel(channel int) {
-
-	if !lv.ValidLighthouse {
-		return
-	}
-
-	if lv.modeCharacteristic == nil {
-		log.Printf("ModeCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
-		lv.ScanCharacteristics()
-		lv.SetChannel(channel)
-		return
-	}
-
-	_, err := lv.modeCharacteristic.Write([]byte{byte(channel)})
-	if err != nil {
-		log.Printf("Write error: %v", err)
-	}
-
-	lv.CachedChannel = channel
-}
-
 func (lv *LighthouseV2) GetPowerState() int {
 	return lv.CachedPowerState
-}
-
-func (lv *LighthouseV2) SetPowerState(state byte) {
-
-	if !lv.ValidLighthouse {
-		return
-	}
-
-	if lv.powerStateCharacteristic == nil {
-		log.Printf("PowerStateCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
-		lv.ScanCharacteristics()
-		lv.SetPowerState(state)
-		return
-	}
-
-	lv.powerStateCharacteristic.Write([]byte{state})
-}
-
-func (lv *LighthouseV2) Identitfy() {
-
-	if !lv.ValidLighthouse {
-		return
-	}
-
-	if lv.identifyCharacteristic == nil {
-		log.Printf("IdentifyCharacteristic on %s was nil, rescanning characteristics and trying again...\n", lv.Name)
-		lv.ScanCharacteristics()
-		lv.Identitfy()
-		return
-	}
-
-	lv.identifyCharacteristic.Write([]byte{0x01})
 }
 
 func (lv *LighthouseV2) GetName() string {

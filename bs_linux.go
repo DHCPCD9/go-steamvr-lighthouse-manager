@@ -1,5 +1,5 @@
-//go:build darwin
-// +build darwin
+//go:build unix
+// +build unix
 
 package main
 
@@ -12,16 +12,27 @@ import (
 
 func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool, attemp int) {
 
-	parsedUuid, err := bluetooth.ParseUUID(config.MacAddress)
+	parsedMac, err := bluetooth.ParseMAC(config.MacAddress)
 
 	if err != nil {
 		log.Printf("Failed to parse mac: %s for lighthouse %s (%+v)\n", config.MacAddress, config.Id, err)
 		return
 	}
 
+	if adapter == nil {
+		log.Printf("No adapter found.")
+		ADAPTER_NOT_FOUND = true
+		WEBSOCKET_BROADCAST.Broadcast(preparePacket("adapter.status", map[string]interface{}{}))
+		return
+	}
+
 	conn, err := adapter.Connect(bluetooth.Address{
-		UUID: parsedUuid,
-	}, bluetooth.ConnectionParams{})
+		MACAddress: bluetooth.MACAddress{
+			MAC: parsedMac,
+		},
+	}, bluetooth.ConnectionParams{
+		Timeout: bluetooth.NewDuration(time.Second * 10),
+	})
 	if err != nil {
 		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
 
@@ -31,6 +42,9 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 	}
 
 	bs.adapter = adapter
+
+	defer conn.Disconnect()
+
 	bs.p = &conn
 
 	log.Printf("Connected to base station: %s, wake up: %+v\n", config.Id, wakeUp)
@@ -51,7 +65,7 @@ func (lv *LighthouseV2) Reconnect() {
 	lv.powerStateCharacteristic = nil
 
 	log.Println("Reconnecting...")
-	parsedUuid, err := bluetooth.ParseUUID(lv.mac)
+	parsedMac, err := bluetooth.ParseMAC(lv.mac)
 
 	if err != nil {
 		log.Printf("Failed to parse MAC: %+v\n", err)
@@ -59,10 +73,12 @@ func (lv *LighthouseV2) Reconnect() {
 	}
 
 	conn, err := adapter.Connect(bluetooth.Address{
-		UUID: parsedUuid,
-	}, bluetooth.ConnectionParams{})
-
-	defer conn.Disconnect()
+		MACAddress: bluetooth.MACAddress{
+			MAC: parsedMac,
+		},
+	}, bluetooth.ConnectionParams{
+		MaxInterval: bluetooth.NewDuration(time.Millisecond * 30),
+	})
 
 	if err != nil {
 		log.Printf("Failed to reconnect to lighthouse %s: %+v\n", lv.Name, err)
@@ -78,56 +94,11 @@ func (lv *LighthouseV2) Reconnect() {
 }
 
 func (lv *LighthouseV2) StartCaching() {
-	if lv.powerStateCharacteristic != nil {
-
-		err := lv.powerStateCharacteristic.EnableNotifications(func(buf []byte) {
-			lv.CachedPowerState = int(buf[0])
-			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", int(buf[0])))
-			log.Printf("Power state on %s changed: %+v", lv.Id, buf)
-		})
-
-		if err != nil {
-			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
-			lv.updateAvailable = true
-		}
-	}
-
-	if lv.modeCharacteristic != nil {
-		err := lv.modeCharacteristic.EnableNotifications(func(buf []byte) {
-			lv.CachedChannel = int(buf[0])
-			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", int(buf[0])))
-
-		})
-
-		if err != nil {
-			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
-			lv.updateAvailable = true
-		}
-	}
-
-	// go func() {
-	// 	//I really ran out of ideas how to do it better
-	// 	var data []byte = make([]byte, 1)
-	// 	var err error
-	// 	for {
-
-	// 		if lv.powerStateCharacteristic == nil {
-	// 			time.Sleep(time.Second)
-	// 			continue
-	// 		}
-	// 		_, err = lv.powerStateCharacteristic.Read(data)
-
-	// 		if err != nil {
-	// 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
-	// 			lv.Reconnect()
-	// 			break
-	// 		}
-	// 		time.Sleep(time.Second)
-	// 	}
-	// }()
+	// BlueZ doesn't allow to connect multiple devices at the same time.
 }
 
 func (lv *LighthouseV2) SetPowerState(state byte) {
+	lv.Reconnect()
 
 	if !lv.ValidLighthouse {
 		return
@@ -140,10 +111,20 @@ func (lv *LighthouseV2) SetPowerState(state byte) {
 		return
 	}
 
-	lv.powerStateCharacteristic.Write([]byte{state})
+	n, err := lv.powerStateCharacteristic.WriteWithoutResponse([]byte{state})
+
+	if err != nil {
+		log.Printf("Write error: %v", err)
+	}
+
+	if n > 0 {
+		lv.CachedPowerState = int(state)
+		WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", int(state)))
+	}
 }
 
 func (lv *LighthouseV2) Identitfy() {
+	lv.Reconnect()
 
 	if !lv.ValidLighthouse {
 		return
@@ -156,10 +137,12 @@ func (lv *LighthouseV2) Identitfy() {
 		return
 	}
 
-	lv.identifyCharacteristic.Write([]byte{0x01})
+	lv.identifyCharacteristic.WriteWithoutResponse([]byte{0x01})
+
 }
 
 func (lv *LighthouseV2) SetChannel(channel int) {
+	lv.Reconnect()
 
 	if !lv.ValidLighthouse {
 		return
@@ -172,10 +155,11 @@ func (lv *LighthouseV2) SetChannel(channel int) {
 		return
 	}
 
-	_, err := lv.modeCharacteristic.Write([]byte{byte(channel)})
+	_, err := lv.modeCharacteristic.WriteWithoutResponse([]byte{byte(channel)})
 	if err != nil {
 		log.Printf("Write error: %v", err)
 	}
 
 	lv.CachedChannel = channel
+	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", channel))
 }
