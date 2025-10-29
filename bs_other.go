@@ -51,6 +51,9 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 }
 
 func (lv *LighthouseV2) Reconnect() {
+
+	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
+
 	lv.identifyCharacteristic = nil
 	lv.modeCharacteristic = nil
 	lv.powerStateCharacteristic = nil
@@ -76,11 +79,9 @@ func (lv *LighthouseV2) Reconnect() {
 		return
 	}
 
-	defer conn.Disconnect()
 	lv.p = &conn
 
-	lv.FindService()
-	lv.ScanCharacteristics()
+	go lv.PostInit(false)
 }
 
 func (lv *LighthouseV2) StartCaching() {

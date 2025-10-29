@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strings"
+	"time"
 
 	"tinygo.org/x/bluetooth"
 )
@@ -71,12 +72,12 @@ func PreloadBaseStation(config BaseStationConfiguration, wakeUp bool) BaseStatio
 	return lh
 }
 
-func (lv *LighthouseV2) FindService() {
+func (lv *LighthouseV2) FindService() bool {
 	services, err := lv.p.DiscoverServices(nil)
 	if err != nil {
 		lv.Reconnect()
 		log.Printf("Failed to find service: %+v\n", err)
-		return
+		return false
 	}
 
 	var foundService *bluetooth.DeviceService
@@ -91,6 +92,8 @@ func (lv *LighthouseV2) FindService() {
 	}
 
 	lv.service = foundService
+
+	return true
 }
 
 func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, name string) (BaseStation, bool) {
@@ -108,25 +111,62 @@ func InitBaseStation(connection *bluetooth.Device, adapter *bluetooth.Adapter, n
 		Status:                   "scanning",
 	}
 
-	bs.FindService()
-	bs.ValidLighthouse = bs.ScanCharacteristics()
+	go bs.PostInit(false)
+	return bs, true
+}
 
-	go bs.StartCaching()
+func (lighthouse *LighthouseV2) PostInit(wakeUp bool) {
+	statusChannel := make(chan bool, 1)
+	go lighthouse.InitStack(statusChannel)
 
-	bs.CachedPowerState = bs.readPowerState()
+	go func() {
+		select {
+		case status := <-statusChannel:
+			if !status {
+				lighthouse.Disconnect()
+				go lighthouse.Reconnect()
+				return
+			}
+
+			if wakeUp {
+				lighthouse.SetPowerState(byte(0x01))
+			}
+		case <-time.After(time.Second * 3):
+			go lighthouse.Reconnect()
+			return
+		}
+	}()
+}
+
+func (lighthouse *LighthouseV2) InitStack(status chan bool) {
+
+	if !lighthouse.FindService() {
+		status <- false //Failed
+	}
+
+	//Adding deadline
+	lighthouse.ValidLighthouse = lighthouse.ScanCharacteristics()
+
+	if !lighthouse.ValidLighthouse {
+		status <- false // Failed as well
+	}
+	go lighthouse.StartCaching()
+
+	lighthouse.CachedPowerState = lighthouse.readPowerState()
 
 	WEBSOCKET_BROADCAST.Broadcast(preparePacket("lighthouse.found", JsonBaseStation{
-		Name:         bs.GetName(),
-		Channel:      bs.GetChannel(),
-		PowerState:   bs.GetPowerState(),
+		Name:         lighthouse.GetName(),
+		Channel:      lighthouse.GetChannel(),
+		PowerState:   lighthouse.GetPowerState(),
 		LastUpdated:  nil,
-		Version:      bs.GetVersion(),
-		Status:       bs.GetStatus(),
+		Version:      lighthouse.GetVersion(),
+		Status:       lighthouse.GetStatus(),
 		ManagedFlags: 6,
-		Id:           bs.GetId(),
+		Id:           lighthouse.GetId(),
 	}))
+	//Everything is fine, telling in status that we don't need to wait anymore
 
-	return bs, true
+	status <- true
 }
 
 func (lv *LighthouseV2) ScanCharacteristics() bool {
@@ -196,8 +236,11 @@ func (lv *LighthouseV2) SetChannel(channel int) {
 	}
 
 	_, err := lv.modeCharacteristic.Write([]byte{byte(channel)})
+
 	if err != nil {
-		log.Printf("Write error: %v", err)
+		log.Printf("Failed to write bytes on lighthouse, reconnecting...; lighthouse=%s, err=%+v;\n", lv.Id, err)
+
+		lv.Reconnect()
 	}
 
 	lv.CachedChannel = channel
@@ -220,7 +263,13 @@ func (lv *LighthouseV2) SetPowerState(state byte) {
 		return
 	}
 
-	lv.powerStateCharacteristic.Write([]byte{state})
+	_, err := lv.powerStateCharacteristic.Write([]byte{state})
+
+	if err != nil {
+		log.Printf("Failed to write bytes on lighthouse, reconnecting...; lighthouse=%s, err=%+v;\n", lv.Id, err)
+
+		lv.Reconnect()
+	}
 }
 
 func (lv *LighthouseV2) Identitfy() {
@@ -236,7 +285,13 @@ func (lv *LighthouseV2) Identitfy() {
 		return
 	}
 
-	lv.identifyCharacteristic.Write([]byte{0x01})
+	_, err := lv.identifyCharacteristic.Write([]byte{0x01})
+
+	if err != nil {
+		log.Printf("Failed to write bytes on lighthouse, reconnecting...; lighthouse=%s, err=%+v;\n", lv.Id, err)
+
+		lv.Reconnect()
+	}
 }
 
 func (lv *LighthouseV2) GetName() string {
