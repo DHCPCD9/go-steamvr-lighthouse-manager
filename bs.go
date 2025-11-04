@@ -235,7 +235,7 @@ func (lv *LighthouseV2) SetChannel(channel int) {
 		return
 	}
 
-	_, err := lv.modeCharacteristic.Write([]byte{byte(channel)})
+	_, err := lv.Write(lv.modeCharacteristic, []byte{byte(channel)})
 
 	if err != nil {
 		log.Printf("Failed to write bytes on lighthouse, reconnecting...; lighthouse=%s, err=%+v;\n", lv.Id, err)
@@ -263,7 +263,8 @@ func (lv *LighthouseV2) SetPowerState(state byte) {
 		return
 	}
 
-	_, err := lv.powerStateCharacteristic.Write([]byte{state})
+	// _, err := lv.powerStateCharacteristic.Write([]byte{state})
+	_, err := lv.Write(lv.powerStateCharacteristic, []byte{state})
 
 	if err != nil {
 		log.Printf("Failed to write bytes on lighthouse, reconnecting...; lighthouse=%s, err=%+v;\n", lv.Id, err)
@@ -285,7 +286,8 @@ func (lv *LighthouseV2) Identitfy() {
 		return
 	}
 
-	_, err := lv.identifyCharacteristic.Write([]byte{0x01})
+	// _, err := lv.identifyCharacteristic.Write([]byte{0x01})
+	_, err := lv.Write(lv.identifyCharacteristic, []byte{0x01})
 
 	if err != nil {
 		log.Printf("Failed to write bytes on lighthouse, reconnecting...; lighthouse=%s, err=%+v;\n", lv.Id, err)

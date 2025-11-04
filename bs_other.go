@@ -1,5 +1,5 @@
-//go:build !darwin
-// +build !darwin
+//go:build linux
+// +build linux
 
 package main
 
@@ -50,6 +50,40 @@ func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfigura
 	go bs.StartCaching()
 }
 
+func (lv *LighthouseV2) StartCaching() {
+	if lv.powerStateCharacteristic != nil {
+
+		err := lv.powerStateCharacteristic.EnableNotifications(func(buf []byte) {
+			lv.CachedPowerState = int(buf[0])
+			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", int(buf[0])))
+			log.Printf("Power state on %s changed: %+v", lv.Id, buf)
+		})
+
+		if err != nil {
+			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
+			lv.updateAvailable = true
+		}
+	}
+
+	if lv.modeCharacteristic != nil {
+		err := lv.modeCharacteristic.EnableNotifications(func(buf []byte) {
+			lv.CachedChannel = int(buf[0])
+			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", int(buf[0])))
+
+		})
+
+		if err != nil {
+			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
+			lv.updateAvailable = true
+		}
+	}
+}
+
+func (lighthouse *LighthouseV2) Write(characteristic *bluetooth.DeviceCharacteristic, value []byte) (int, error) {
+	bytes, err := characteristic.WriteWithoutResponse(value)
+	return bytes, err
+}
+
 func (lv *LighthouseV2) Reconnect() {
 
 	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
@@ -82,54 +116,4 @@ func (lv *LighthouseV2) Reconnect() {
 	lv.p = &conn
 
 	go lv.PostInit(false)
-}
-
-func (lv *LighthouseV2) StartCaching() {
-	if lv.powerStateCharacteristic != nil {
-
-		err := lv.powerStateCharacteristic.EnableNotificationsWithMode(bluetooth.NotificationModeNotify, func(buf []byte) {
-			lv.CachedPowerState = int(buf[0])
-			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", int(buf[0])))
-			log.Printf("Power state on %s changed: %+v", lv.Id, buf)
-		})
-
-		if err != nil {
-			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
-			lv.updateAvailable = true
-		}
-	}
-
-	if lv.modeCharacteristic != nil {
-		err := lv.modeCharacteristic.EnableNotificationsWithMode(bluetooth.NotificationModeNotify, func(buf []byte) {
-			lv.CachedChannel = int(buf[0])
-			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", int(buf[0])))
-
-		})
-
-		if err != nil {
-			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
-			lv.updateAvailable = true
-		}
-	}
-
-	// go func() {
-	// 	//I really ran out of ideas how to do it better
-	// 	var data []byte = make([]byte, 1)
-	// 	var err error
-	// 	for {
-
-	// 		if lv.powerStateCharacteristic == nil {
-	// 			time.Sleep(time.Second)
-	// 			continue
-	// 		}
-	// 		_, err = lv.powerStateCharacteristic.Read(data)
-
-	// 		if err != nil {
-	// 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
-	// 			lv.Reconnect()
-	// 			break
-	// 		}
-	// 		time.Sleep(time.Second)
-	// 	}
-	// }()
 }

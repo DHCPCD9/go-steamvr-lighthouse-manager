@@ -1,5 +1,5 @@
-//go:build darwin
-// +build darwin
+//go:build windows
+// +build windows
 
 package main
 
@@ -10,44 +10,21 @@ import (
 	"tinygo.org/x/bluetooth"
 )
 
-func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool, attemp int) {
-
-	parsedUuid, err := bluetooth.ParseUUID(config.MacAddress)
-
-	if err != nil {
-		log.Printf("Failed to parse mac: %s for lighthouse %s (%+v)\n", config.MacAddress, config.Id, err)
-		return
-	}
-
-	conn, err := adapter.Connect(bluetooth.Address{
-		UUID: parsedUuid,
-	}, bluetooth.ConnectionParams{})
-	if err != nil {
-		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
-
-		time.Sleep(time.Second)
-		connectToPreloadedBaseStation(bs, config, wakeUp, attemp+1)
-		return
-	}
-
-	bs.adapter = adapter
-	bs.p = &conn
-
-	log.Printf("Connected to base station: %s, wake up: %+v\n", config.Id, wakeUp)
-
-	go bs.PostInit(wakeUp)
-
-	go bs.StartCaching()
+func (lighthouse *LighthouseV2) Write(characteristic *bluetooth.DeviceCharacteristic, value []byte) (int, error) {
+	bytes, err := characteristic.Write(value)
+	return bytes, err
 }
 
 func (lv *LighthouseV2) Reconnect() {
+
 	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
+
 	lv.identifyCharacteristic = nil
 	lv.modeCharacteristic = nil
 	lv.powerStateCharacteristic = nil
 
 	log.Println("Reconnecting...")
-	parsedUuid, err := bluetooth.ParseUUID(lv.mac)
+	parsedMac, err := bluetooth.ParseMAC(lv.mac)
 
 	if err != nil {
 		log.Printf("Failed to parse MAC: %+v\n", err)
@@ -55,7 +32,9 @@ func (lv *LighthouseV2) Reconnect() {
 	}
 
 	conn, err := adapter.Connect(bluetooth.Address{
-		UUID: parsedUuid,
+		MACAddress: bluetooth.MACAddress{
+			MAC: parsedMac,
+		},
 	}, bluetooth.ConnectionParams{})
 
 	if err != nil {
@@ -97,29 +76,44 @@ func (lv *LighthouseV2) StartCaching() {
 			lv.updateAvailable = true
 		}
 	}
-
-	// go func() {
-	// 	//I really ran out of ideas how to do it better
-	// 	var data []byte = make([]byte, 1)
-	// 	var err error
-	// 	for {
-
-	// 		if lv.powerStateCharacteristic == nil {
-	// 			time.Sleep(time.Second)
-	// 			continue
-	// 		}
-	// 		_, err = lv.powerStateCharacteristic.Read(data)
-
-	// 		if err != nil {
-	// 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
-	// 			lv.Reconnect()
-	// 			break
-	// 		}
-	// 		time.Sleep(time.Second)
-	// 	}
-	// }()
 }
-func (lighthouse *LighthouseV2) Write(characteristic *bluetooth.DeviceCharacteristic, value []byte) (int, error) {
-	bytes, err := characteristic.Write(value)
-	return bytes, err
+
+func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool, attemp int) {
+
+	parsedMac, err := bluetooth.ParseMAC(config.MacAddress)
+
+	if err != nil {
+		log.Printf("Failed to parse mac: %s for lighthouse %s (%+v)\n", config.MacAddress, config.Id, err)
+		return
+	}
+
+	conn, err := adapter.Connect(bluetooth.Address{
+		MACAddress: bluetooth.MACAddress{
+			MAC: parsedMac,
+		},
+	}, bluetooth.ConnectionParams{})
+	if err != nil {
+		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
+
+		time.Sleep(time.Second)
+		connectToPreloadedBaseStation(bs, config, wakeUp, attemp+1)
+		return
+	}
+
+	bs.adapter = adapter
+
+	defer conn.Disconnect()
+
+	bs.p = &conn
+
+	log.Printf("Connected to base station: %s, wake up: %+v\n", config.Id, wakeUp)
+
+	bs.FindService()
+	bs.ScanCharacteristics()
+
+	if wakeUp {
+		bs.SetPowerState(byte(0x01))
+	}
+
+	go bs.StartCaching()
 }

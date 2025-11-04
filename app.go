@@ -84,6 +84,8 @@ func (a *App) startup(ctx context.Context) {
 	}()
 
 	config = GetConfiguration()
+	a.InitBluetooth()
+
 	go a.preloadBaseStations()
 
 	if config.IsSteamVRManaged && runtime.GOOS == "windows" {
@@ -93,7 +95,6 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	go initializeSystray(a)
-	go a.InitBluetooth()
 	go StartHttp()
 
 }
