@@ -1,5 +1,4 @@
-pkgname='steamvr-lighthouse-manager'
-pkgver=1.1
+pkgname='steamvr-lighthouse-manager-git'
 pkgrel=1
 epoch=
 pkgdesc="App for managing SteamVR Base Stations 2.0."
@@ -21,6 +20,11 @@ changelog=
 source=("$pkgname::git+https://github.com/DHCPCD9/go-steamvr-lighthouse-manager.git")
 noextract=()
 sha256sums=('SKIP')
+
+pkgver() {
+  cd "$pkgname"
+  git describe --long --tags --abbrev=7 | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
 
 prepare() {
 	cd "$pkgname"
