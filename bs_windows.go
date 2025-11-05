@@ -52,7 +52,7 @@ func (lv *LighthouseV2) Reconnect() {
 func (lv *LighthouseV2) StartCaching() {
 	if lv.powerStateCharacteristic != nil {
 
-		err := lv.powerStateCharacteristic.EnableNotifications(func(buf []byte) {
+		err := lv.powerStateCharacteristic.EnableNotificationsWithMode(bluetooth.NotificationModeNotify, func(buf []byte) {
 			lv.CachedPowerState = int(buf[0])
 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", int(buf[0])))
 			log.Printf("Power state on %s changed: %+v", lv.Id, buf)
@@ -65,7 +65,7 @@ func (lv *LighthouseV2) StartCaching() {
 	}
 
 	if lv.modeCharacteristic != nil {
-		err := lv.modeCharacteristic.EnableNotifications(func(buf []byte) {
+		err := lv.modeCharacteristic.EnableNotificationsWithMode(bluetooth.NotificationModeNotify, func(buf []byte) {
 			lv.CachedChannel = int(buf[0])
 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", int(buf[0])))
 
