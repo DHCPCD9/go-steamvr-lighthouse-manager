@@ -12,6 +12,15 @@ A tool to control SteamVR Base Stations 2.0 on your PC.<br> It does not require 
 - Bluetooth LE (4.0 or higher) 
 - SteamVR Base Station 2.0 
 
+### Installation
+ #### Windows
+ Grab latest release from [Release Tab](https://github.com/DHCPCD9/go-steamvr-lighthouse-manager/releases)
+ #### Linux
+ If you are using arch-based distro, then you can install [steamvr-lighthouse-manager-git](https://aur.archlinux.org/packages/steamvr-lighthouse-manager-git) from AUR.
+ Otherwise you can compile youself using wails, requirements state [here](https://aur.archlinux.org/packages/steamvr-lighthouse-manager-git)
+ #### MacOS
+ Install golang, wails and compile by yourself.
+
 ### How to use 
 1. Install & Run the program.
 2. Now all Base Stations should turn on and off automatically, if you want to disable it, just click on the "Settings" icon at the top and turn it off.
