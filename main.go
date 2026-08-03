@@ -3,6 +3,8 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
+	"runtime"
 	"strings"
 
 	"net/http"
@@ -21,6 +23,17 @@ var assets embed.FS
 var icon []byte
 
 func main() {
+	if runtime.GOOS == "linux" && os.Getenv("GDK_BACKEND") == "" {
+		// GTK3's native-Wayland backend has never reliably supported
+		// client-controlled undecorated toplevels (unlike X11) - even
+		// cooperative compositors like Mutter end up drawing a fallback
+		// frame around a Frameless window. Routing the webview through
+		// XWayland (which every GNOME/KDE desktop ships) makes the window
+		// actually borderless. Only set this if the user hasn't already
+		// picked a backend themselves.
+		os.Setenv("GDK_BACKEND", "x11")
+	}
+
 	// Create an instance of the app structure
 	app := NewApp()
 

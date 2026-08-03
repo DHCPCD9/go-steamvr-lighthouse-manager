@@ -4,122 +4,127 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"tinygo.org/x/bluetooth"
 )
 
-func connectToPreloadedBaseStation(bs *LighthouseV2, config BaseStationConfiguration, wakeUp bool, attemp int) {
+// macOS keeps using tinygo.org/x/bluetooth (CoreBluetooth backend), unchanged
+// - including addressing devices by CoreBluetooth UUID instead of MAC. This
+// file only adapts it to the platform-agnostic BLE* interfaces from bs.go.
 
-	parsedUuid, err := bluetooth.ParseUUID(config.MacAddress)
-
-	if err != nil {
-		log.Printf("Failed to parse mac: %s for lighthouse %s (%+v)\n", config.MacAddress, config.Id, err)
-		return
-	}
-
-	conn, err := adapter.Connect(bluetooth.Address{
-		UUID: parsedUuid,
-	}, bluetooth.ConnectionParams{})
-	if err != nil {
-		log.Printf("Failed to connect to base station: %s %+v", config.Id, err)
-
-		time.Sleep(time.Second)
-		connectToPreloadedBaseStation(bs, config, wakeUp, attemp+1)
-		return
-	}
-
-	bs.adapter = adapter
-	bs.p = &conn
-
-	log.Printf("Connected to base station: %s, wake up: %+v\n", config.Id, wakeUp)
-
-	go bs.PostInit(wakeUp)
-
-	go bs.StartCaching()
+func NewPlatformAdapter() BLEAdapter {
+	return &tinygoAdapter{adapter: bluetooth.DefaultAdapter}
 }
 
-func (lv *LighthouseV2) Reconnect() {
-	WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
-	lv.identifyCharacteristic = nil
-	lv.modeCharacteristic = nil
-	lv.powerStateCharacteristic = nil
+type tinygoAdapter struct {
+	adapter *bluetooth.Adapter
+}
 
-	log.Println("Reconnecting...")
-	parsedUuid, err := bluetooth.ParseUUID(lv.mac)
+func (a *tinygoAdapter) Enable() error {
+	return a.adapter.Enable()
+}
 
+func (a *tinygoAdapter) Scan(callback func(BLEAdapter, BLEScanResult)) error {
+	return a.adapter.Scan(func(_ *bluetooth.Adapter, sr bluetooth.ScanResult) {
+		callback(a, &tinygoScanResult{sr: sr})
+	})
+}
+
+func (a *tinygoAdapter) StopScan() error {
+	return a.adapter.StopScan()
+}
+
+func (a *tinygoAdapter) Connect(address string, timeout time.Duration) (BLEDevice, error) {
+	parsedUuid, err := bluetooth.ParseUUID(address)
 	if err != nil {
-		log.Printf("Failed to parse MAC: %+v\n", err)
-		return
+		return nil, err
 	}
 
-	conn, err := adapter.Connect(bluetooth.Address{
+	conn, err := a.adapter.Connect(bluetooth.Address{
 		UUID: parsedUuid,
 	}, bluetooth.ConnectionParams{})
 
 	if err != nil {
-		log.Printf("Failed to reconnect to lighthouse %s: %+v\n", lv.Name, err)
-		time.Sleep(time.Second)
-		lv.Reconnect()
-		return
+		return nil, err
 	}
 
-	lv.p = &conn
-
-	go lv.PostInit(false)
+	return &tinygoDevice{device: conn}, nil
 }
 
-func (lv *LighthouseV2) StartCaching() {
-	if lv.powerStateCharacteristic != nil {
-
-		err := lv.powerStateCharacteristic.EnableNotifications(func(buf []byte) {
-			lv.CachedPowerState = int(buf[0])
-			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.power_state", "power_state", int(buf[0])))
-			log.Printf("Power state on %s changed: %+v", lv.Id, buf)
-		})
-
-		if err != nil {
-			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
-			lv.updateAvailable = true
-		}
-	}
-
-	if lv.modeCharacteristic != nil {
-		err := lv.modeCharacteristic.EnableNotifications(func(buf []byte) {
-			lv.CachedChannel = int(buf[0])
-			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.channel", "channel", int(buf[0])))
-
-		})
-
-		if err != nil {
-			log.Printf("Failed to receive notifications on power state, base station firmware probably outdated; lighthouse=%s; err=%+v", lv.Id, err)
-			lv.updateAvailable = true
-		}
-	}
-
-	// go func() {
-	// 	//I really ran out of ideas how to do it better
-	// 	var data []byte = make([]byte, 1)
-	// 	var err error
-	// 	for {
-
-	// 		if lv.powerStateCharacteristic == nil {
-	// 			time.Sleep(time.Second)
-	// 			continue
-	// 		}
-	// 		_, err = lv.powerStateCharacteristic.Read(data)
-
-	// 		if err != nil {
-	// 			WEBSOCKET_BROADCAST.Broadcast(prepareIdWithFieldPacket(lv.Id, "lighthouse.update.status", "status", "preloaded"))
-	// 			lv.Reconnect()
-	// 			break
-	// 		}
-	// 		time.Sleep(time.Second)
-	// 	}
-	// }()
+type tinygoScanResult struct {
+	sr bluetooth.ScanResult
 }
-func (lighthouse *LighthouseV2) Write(characteristic *bluetooth.DeviceCharacteristic, value []byte) (int, error) {
-	bytes, err := characteristic.Write(value)
-	return bytes, err
+
+func (r *tinygoScanResult) LocalName() string { return r.sr.LocalName() }
+func (r *tinygoScanResult) Address() string   { return r.sr.Address.String() }
+
+type tinygoDevice struct {
+	device bluetooth.Device
+}
+
+func (d *tinygoDevice) Address() string  { return d.device.Address.String() }
+func (d *tinygoDevice) Disconnect() error { return d.device.Disconnect() }
+
+func (d *tinygoDevice) DiscoverServices() ([]BLEService, error) {
+	services, err := d.device.DiscoverServices(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]BLEService, len(services))
+	for i := range services {
+		result[i] = &tinygoService{service: services[i]}
+	}
+	return result, nil
+}
+
+type tinygoService struct {
+	service bluetooth.DeviceService
+}
+
+func (s *tinygoService) UUID() string { return s.service.UUID().String() }
+
+func (s *tinygoService) DiscoverCharacteristics() ([]BLECharacteristic, error) {
+	chars, err := s.service.DiscoverCharacteristics(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]BLECharacteristic, len(chars))
+	for i := range chars {
+		result[i] = &tinygoCharacteristic{char: chars[i]}
+	}
+	return result, nil
+}
+
+type tinygoCharacteristic struct {
+	char bluetooth.DeviceCharacteristic
+}
+
+func (c *tinygoCharacteristic) UUID() string { return c.char.UUID().String() }
+
+func (c *tinygoCharacteristic) Read() ([]byte, error) {
+	data := make([]byte, 1)
+	n, err := c.char.Read(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (c *tinygoCharacteristic) Write(value []byte) (int, error) {
+	return c.char.Write(value)
+}
+
+func (c *tinygoCharacteristic) WriteWithoutResponse(value []byte) (int, error) {
+	return c.char.WriteWithoutResponse(value)
+}
+
+func (c *tinygoCharacteristic) EnableNotifications(callback func(buf []byte)) error {
+	return c.char.EnableNotifications(callback)
+}
+
+func (lighthouse *LighthouseV2) Write(characteristic BLECharacteristic, value []byte) (int, error) {
+	return characteristic.Write(value)
 }

@@ -15,10 +15,9 @@ import (
 	"github.com/gen2brain/beeep"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
-	"tinygo.org/x/bluetooth"
 )
 
-var adapter = bluetooth.DefaultAdapter
+var adapter = NewPlatformAdapter()
 var WAKE_UP_CHANNEL = make(chan interface{})
 var knownBaseStations = cmap.New[*BaseStation]()
 
@@ -199,10 +198,32 @@ func (a *App) UpdateGroupManagedFlags(id string, managed_flags int) string {
 func (a *App) preloadBaseStations() {
 
 	steamVrRunning, _ := isProcRunning("vrserver.exe")
+	dropped := false
 	for name, baseStation := range config.KnownBaseStations {
+		if baseStation == nil {
+			log.Printf("Dropping nil saved base station entry %q\n", name)
+			delete(config.KnownBaseStations, name)
+			dropped = true
+			continue
+		}
+
+		if strings.TrimSpace(baseStation.Id) == "" || strings.TrimSpace(baseStation.MacAddress) == "" {
+			// A base station saved without a name/address can never connect
+			// - it would otherwise show up as a permanent "ghost" entry
+			// stuck retrying forever. Drop it instead of preloading it.
+			log.Printf("Dropping invalid saved base station entry %q (id=%q mac=%q)\n", name, baseStation.Id, baseStation.MacAddress)
+			delete(config.KnownBaseStations, name)
+			dropped = true
+			continue
+		}
+
 		log.Printf("Preload base station: %s %+v\n", name, baseStation)
 		preloadedBaseStation := PreloadBaseStation(*baseStation, steamVrRunning && ((baseStation.ManagedFlags&2) > 0))
 		knownBaseStations.Set(name, &preloadedBaseStation)
+	}
+
+	if dropped {
+		config.Save()
 	}
 }
 
@@ -313,7 +334,7 @@ func (a *App) ToggleTray() Configuration {
 	return *config
 }
 
-func (a *App) bluetoothCallback(adapter *bluetooth.Adapter, sr bluetooth.ScanResult) {
+func (a *App) bluetoothCallback(adapter BLEAdapter, sr BLEScanResult) {
 
 	if !strings.HasPrefix(sr.LocalName(), "LHB-") {
 		return
@@ -344,6 +365,7 @@ func (a *App) InitBluetooth() bool {
 	}
 
 	if err := adapter.Enable(); err != nil {
+		log.Printf("Failed to enable Bluetooth adapter: %+v\n", err)
 		return false
 	}
 
@@ -353,7 +375,7 @@ func (a *App) InitBluetooth() bool {
 	return true
 }
 
-func ScanCallback(app *App, a *bluetooth.Adapter, sr bluetooth.ScanResult) {
+func ScanCallback(app *App, a BLEAdapter, sr BLEScanResult) {
 
 	_, found := knownBaseStations.Get(sr.LocalName())
 
@@ -362,21 +384,24 @@ func ScanCallback(app *App, a *bluetooth.Adapter, sr bluetooth.ScanResult) {
 		knownBaseStations.Set(sr.LocalName(), nil)
 		//Base station not found, we need to store it in out config then
 
-		conn, err := a.Connect(sr.Address, bluetooth.ConnectionParams{})
+		conn, err := a.Connect(sr.Address(), time.Second*10)
 
 		if err != nil {
-			log.Printf("Failed to connect to bluetooth device: %s\n", sr.LocalName())
-
-			return
-		}
-
-		bs, ok := InitBaseStation(&conn, a, sr.LocalName())
-
-		if !ok {
+			log.Printf("Failed to connect to bluetooth device: %s, err=%+v\n", sr.LocalName(), err)
+			// Undo the placeholder set above - otherwise this name is stuck
+			// "already known" forever and we'd never attempt it again even
+			// after it comes back in range.
 			knownBaseStations.Remove(sr.LocalName())
 			return
 		}
-		defer conn.Disconnect()
+
+		bs, ok := InitBaseStation(conn, a, sr.LocalName())
+
+		if !ok {
+			knownBaseStations.Remove(sr.LocalName())
+			conn.Disconnect()
+			return
+		}
 
 		knownBaseStations.Set(sr.LocalName(), &bs)
 
