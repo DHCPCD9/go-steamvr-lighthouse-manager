@@ -57,7 +57,7 @@ pub fn base_station_group(
                         (*on_open)(app, cx);
                     }
                 }))
-                .child(icons::grouped().text_color(rgb(theme::ICON_BLUE)))
+                .child(icons::grouped())
                 .child(
                     div()
                         .flex()

@@ -1,7 +1,7 @@
-//! Icon helpers. Each returns a tintable `svg()` element whose `currentColor`
-//! is controlled via `.text_color(...)` by the caller.
+//! Icon helpers. Monochrome icons use tintable `svg()` elements; the grouped
+//! station artwork uses `img()` to preserve its blue fill and dark details.
 
-use gpui::{Fill::Color, SharedString, Svg, prelude::*, px, svg};
+use gpui::{Fill::Color, Img, SharedString, Svg, prelude::*, img, px, svg};
 
 fn icon(path: &'static str, w: f32, h: f32) -> Svg {
     // Note: gpui renders SVGs as monochrome sprites tinted by the element's
@@ -18,8 +18,8 @@ pub fn status_circle() -> Svg {
     icon("icons/status_circle.svg", 8.0, 8.0)
 }
 
-pub fn grouped() -> Svg {
-    icon("icons/grouped.svg", 36.0, 36.0)
+pub fn grouped() -> Img {
+    img("icons/grouped.svg").w(px(36.)).h(px(36.))
 }
 
 pub fn chevron_down() -> Svg {
