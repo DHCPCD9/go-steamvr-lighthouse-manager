@@ -1,0 +1,36 @@
+[package]
+name = "steamvr-lighthouse-manager"
+version = "1.2.0-gpui"
+edition = "2021"
+
+[dependencies]
+gpui = "0.2"
+# xattr 0.2.3 (transitive via gpui's async-tar) references libc::ENOATTR on
+# Linux, which was removed from libc >= 0.2.185. Pin to a version that still
+# defines it (0.2.184), while satisfying nix's `^0.2.171` requirement.
+libc = "=0.2.184"
+
+btleplug = "0.13"
+tokio = { version = "1", features = ["rt-multi-thread", "time", "macros", "sync"] }
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+uuid = { version = "1", features = ["v4"] }
+dirs = "5"
+log = "0.4"
+env_logger = "0.11"
+flume = "0.11"
+unicode-segmentation = "1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.62", features = ["Devices_Bluetooth", "Devices_Bluetooth_GenericAttributeProfile", "Storage_Streams", "Win32_Foundation", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_WindowsAndMessaging", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading"] }
+tray-icon = { version = "0.26.1", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png"] }
+raw-window-handle = { version = "0.6", features = ["std"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+sha2 = "0.10"
+semver = "1"
+
+[profile.dev]
+opt-level = 1

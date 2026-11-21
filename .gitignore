@@ -1,5 +1,2 @@
-build/bin
-node_modules
-frontend/dist
-build/windows/installer
 log.txt
+target/

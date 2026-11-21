@@ -1,0 +1,63 @@
+name: Native Windows release
+
+on:
+  push:
+    tags:
+      - '*-main'
+      - '*-beta'
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+      - name: Validate release tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^(v?)(.+)-(main|beta)$') {
+            throw 'Expected <Cargo package version>-main or -beta, optionally prefixed with v.'
+          }
+          $version = $Matches[2]
+          $channel = $Matches[3]
+          $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Cargo metadata failed.' }
+          $package = $metadata.packages | Where-Object name -eq 'steamvr-lighthouse-manager'
+          if ($package.version -ne $version) {
+            throw "Tag version $version does not match Cargo.toml version $($package.version)."
+          }
+          "UPDATE_CHANNEL=$channel" >> $env:GITHUB_ENV
+      - name: Build native executable
+        shell: pwsh
+        run: |
+          cargo build --release --locked --target x86_64-pc-windows-msvc --bin steamvr-lighthouse-manager
+          if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
+      - name: Prepare portable release and checksum
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path release-assets | Out-Null
+          $asset = 'steamvr-lighthouse-manager-windows-x86_64.exe'
+          Copy-Item target/x86_64-pc-windows-msvc/release/steamvr-lighthouse-manager.exe "release-assets/$asset"
+          $hash = (Get-FileHash "release-assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $asset" | Set-Content "release-assets/$asset.sha256" -Encoding ascii
+      - name: Publish native release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releaseArgs = @('release', 'create', $env:GITHUB_REF_NAME, '--verify-tag', '--generate-notes')
+          if ($env:UPDATE_CHANNEL -eq 'beta') { $releaseArgs += '--prerelease' }
+          $releaseArgs += @('release-assets/steamvr-lighthouse-manager-windows-x86_64.exe', 'release-assets/steamvr-lighthouse-manager-windows-x86_64.exe.sha256')
+          gh @releaseArgs
+          if ($LASTEXITCODE -ne 0) { throw 'Release publishing failed.' }

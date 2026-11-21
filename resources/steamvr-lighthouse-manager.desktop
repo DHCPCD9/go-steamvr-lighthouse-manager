@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=SteamVR Base Station Manager
+Exec=steamvr-lighthouse-manager
+Icon=steamvr-lighthouse-manager
+Terminal=false
+Categories=Utility;
