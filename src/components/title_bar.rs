@@ -4,7 +4,9 @@ use crate::app::App;
 use crate::icons;
 use crate::motion::Spec;
 use crate::theme;
-use gpui::{prelude::*, AnyElement, ClickEvent, Context, div, px, rgb};
+use gpui::{
+    prelude::*, AnyElement, ClickEvent, Context, MouseButton, WindowControlArea, div, px, rgb,
+};
 
 pub fn render(app: &mut App, cx: &mut Context<App>) -> AnyElement {
     let (show_steamvr, steamvr_active, steamvr_known, backend_ready, version) = {
@@ -40,13 +42,18 @@ pub fn render(app: &mut App, cx: &mut Context<App>) -> AnyElement {
         .flex()
         .flex_row()
         .justify_between()
-        .pt(px(16.))
-        .px(px(24.))
         .child(
             div()
                 .flex()
                 .flex_row()
                 .items_baseline()
+                .flex_1()
+                .pt(px(16.))
+                .pl(px(24.))
+                .window_control_area(WindowControlArea::Drag)
+                .on_mouse_down(MouseButton::Left, |_, window, _| {
+                    window.start_window_move();
+                })
                 .gap(px(4.))
                 .child(
                     div()
@@ -67,13 +74,14 @@ pub fn render(app: &mut App, cx: &mut Context<App>) -> AnyElement {
                         .child(version),
                 ),
         )
-        .child(div())
         .child(
             div()
                 .flex()
                 .flex_row()
                 .gap(px(4.))
                 .items_center()
+                .pt(px(16.))
+                .pr(px(24.))
                 .when(show_steamvr || steamvr_alpha > 0., |this| {
                     this.child(
                         div()

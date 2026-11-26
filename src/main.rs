@@ -10,6 +10,7 @@ mod backend;
 mod components;
 mod config;
 mod i18n;
+mod installer;
 mod icons;
 mod models;
 mod state;
@@ -69,30 +70,48 @@ fn main() {
                 KeyBinding::new("end", End, None),
             ]);
 
-            let bounds = Bounds::centered(None, size(px(700.), px(400.)), cx);
-
-            cx.open_window(
-                WindowOptions {
-                    window_bounds: Some(WindowBounds::Windowed(bounds)),
-                    // Frameless: no system title bar; the app draws its own.
-                    titlebar: None,
-                    window_decorations: Some(gpui::WindowDecorations::Client),
-                    is_resizable: false,
-                    ..Default::default()
-                },
-                |window, cx| cx.new(|cx| {
-                    let mut app = App::new(cx);
-                    #[cfg(target_os = "windows")]
-                    app.initialize_tray(window, cx);
-                    let entity = cx.weak_entity();
-                    window.on_window_should_close(cx, move |_, cx| {
-                        entity.update(cx, |app: &mut App, cx| app.quit(cx)).is_err()
-                    });
-                    app
-                }),
-            )
-            .unwrap();
-
-            cx.activate(true);
+            if backend::installer::should_offer() {
+                cx.open_window(
+                    WindowOptions {
+                        window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                            None, size(px(700.), px(520.)), cx,
+                        ))),
+                        titlebar: None,
+                        window_decorations: Some(gpui::WindowDecorations::Client),
+                        is_resizable: false,
+                        ..Default::default()
+                    },
+                    |_, cx| cx.new(installer::Installer::new),
+                )
+                .expect("open installer window");
+                cx.activate(true);
+            } else {
+                open_manager(cx);
+            }
         });
+}
+
+fn open_manager(cx: &mut GpuiApp) {
+    let bounds = Bounds::centered(None, size(px(700.), px(400.)), cx);
+    cx.open_window(
+        WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(bounds)),
+            titlebar: None,
+            window_decorations: Some(gpui::WindowDecorations::Client),
+            is_resizable: false,
+            ..Default::default()
+        },
+        |window, cx| cx.new(|cx| {
+            let mut app = App::new(cx);
+            #[cfg(target_os = "windows")]
+            app.initialize_tray(window, cx);
+            let entity = cx.weak_entity();
+            window.on_window_should_close(cx, move |_, cx| {
+                entity.update(cx, |app: &mut App, cx| app.quit(cx)).is_err()
+            });
+            app
+        }),
+    )
+    .expect("open manager window");
+    cx.activate(true);
 }

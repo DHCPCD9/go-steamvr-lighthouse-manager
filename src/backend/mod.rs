@@ -1,6 +1,7 @@
 //! Platform detection, SteamVR process detection, Bluetooth LE, and release links.
 
 pub mod ble;
+pub mod installer;
 
 #[cfg(target_os = "windows")]
 #[path = "gatt_windows.rs"]

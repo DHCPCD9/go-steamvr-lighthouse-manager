@@ -3,6 +3,10 @@ name = "steamvr-lighthouse-manager"
 version = "1.2.0-gpui"
 edition = "2021"
 
+[features]
+default = []
+installer = []
+
 [dependencies]
 gpui = "0.2"
 # xattr 0.2.3 (transitive via gpui's async-tar) references libc::ENOATTR on
@@ -24,7 +28,7 @@ flume = "0.11"
 unicode-segmentation = "1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = { version = "0.62", features = ["Devices_Bluetooth", "Devices_Bluetooth_GenericAttributeProfile", "Storage_Streams", "Win32_Foundation", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_WindowsAndMessaging", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading"] }
+windows = { version = "0.62", features = ["Devices_Bluetooth", "Devices_Bluetooth_GenericAttributeProfile", "Storage_Streams", "Win32_Foundation", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell", "Win32_System_Com", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_Threading"] }
 tray-icon = { version = "0.26.1", default-features = false }
 image = { version = "0.25", default-features = false, features = ["png"] }
 raw-window-handle = { version = "0.6", features = ["std"] }

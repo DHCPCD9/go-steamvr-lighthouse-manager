@@ -40,9 +40,9 @@ jobs:
       - name: Build native executable
         shell: pwsh
         run: |
-          cargo build --release --locked --target x86_64-pc-windows-msvc --bin steamvr-lighthouse-manager
+          cargo build --release --locked --features installer --target x86_64-pc-windows-msvc --bin steamvr-lighthouse-manager
           if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
-      - name: Prepare portable release and checksum
+      - name: Prepare install-or-portable release and checksum
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'

@@ -13,13 +13,18 @@ A tool to control SteamVR Base Stations 2.0 on your PC.<br> It does not require 
 - SteamVR Base Station 2.0 
 
 ### Installation
+Installer-enabled builds let you choose **Install for this user** or **Use portable**.
+Installation creates a user-local copy and an application launcher without administrator access.
+Portable mode runs the current copy without installing it; settings stay in the same location in either mode.
+Use `--install` to open the chooser explicitly, or `--portable` to skip it.
+
  #### Windows
  Grab latest release from [Release Tab](https://github.com/DHCPCD9/go-steamvr-lighthouse-manager/releases)
  #### Linux
  If you are using arch-based distro, then you can install [steamvr-lighthouse-manager-git](https://aur.archlinux.org/packages/steamvr-lighthouse-manager-git) from AUR.
- Otherwise you can compile youself using wails, requirements state [here](https://aur.archlinux.org/packages/steamvr-lighthouse-manager-git)
+ Otherwise, build the native Rust/GPUI app with `cargo build --release --locked --features installer`.
  #### MacOS
- Install golang, wails and compile by yourself.
+ Install Rust and Cargo, then build with `cargo build --release --locked --features installer`.
 
 ### How to use 
 1. Install & Run the program.

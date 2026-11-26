@@ -408,12 +408,15 @@ fn launch_arguments() -> Result<Vec<Native>> {
     while index < arguments.len() {
         if arguments[index] == CLEANUP_ARG { index += 4; }
         else if arguments[index] == ERROR_ARG { index += 2; }
+        else if arguments[index] == "--install" || arguments[index] == "--portable" { index += 1; }
         else {
             ensure!(arguments[index] != APPLY_ARG, "An update helper cannot install another update");
             result.push(Native::from(&arguments[index]));
             index += 1;
         }
     }
+    // Restart the running manager, not the optional first-run installer.
+    result.push(Native::from(OsStr::new("--portable")));
     ensure!(result.len() <= 256 && result.iter().map(|arg| arg.0.len() + 1).sum::<usize>() <= 24000,
         "The current launch arguments are too long for a safe update restart");
     Ok(result)
