@@ -42,15 +42,20 @@ jobs:
         run: |
           cargo build --release --locked --features installer --target x86_64-pc-windows-msvc --bin steamvr-lighthouse-manager
           if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
-      - name: Prepare install-or-portable release and checksum
+      - name: Prepare release assets and checksums
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Path release-assets | Out-Null
-          $asset = 'steamvr-lighthouse-manager-windows-x86_64.exe'
-          Copy-Item target/x86_64-pc-windows-msvc/release/steamvr-lighthouse-manager.exe "release-assets/$asset"
-          $hash = (Get-FileHash "release-assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $asset" | Set-Content "release-assets/$asset.sha256" -Encoding ascii
+          New-Item -ItemType Directory -Path release-assets -Force | Out-Null
+          $source = 'target/x86_64-pc-windows-msvc/release/steamvr-lighthouse-manager.exe'
+          # Publish both the native asset name and the legacy *installer.exe name so
+          # the old Go updater can download and run it (auto-migrating from its download path),
+          # while manual downloads still offer the install-or-portable chooser.
+          foreach ($asset in @('steamvr-lighthouse-manager-windows-x86_64.exe', 'steamvr-lighthouse-manager-amd64-installer.exe')) {
+            Copy-Item $source "release-assets/$asset"
+            $hash = (Get-FileHash "release-assets/$asset" -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $asset" | Set-Content "release-assets/$asset.sha256" -Encoding ascii
+          }
       - name: Publish native release
         shell: pwsh
         env:
@@ -58,6 +63,11 @@ jobs:
         run: |
           $releaseArgs = @('release', 'create', $env:GITHUB_REF_NAME, '--verify-tag', '--generate-notes')
           if ($env:UPDATE_CHANNEL -eq 'beta') { $releaseArgs += '--prerelease' }
-          $releaseArgs += @('release-assets/steamvr-lighthouse-manager-windows-x86_64.exe', 'release-assets/steamvr-lighthouse-manager-windows-x86_64.exe.sha256')
+          $releaseArgs += @(
+            'release-assets/steamvr-lighthouse-manager-windows-x86_64.exe',
+            'release-assets/steamvr-lighthouse-manager-windows-x86_64.exe.sha256',
+            'release-assets/steamvr-lighthouse-manager-amd64-installer.exe',
+            'release-assets/steamvr-lighthouse-manager-amd64-installer.exe.sha256'
+          )
           gh @releaseArgs
           if ($LASTEXITCODE -ne 0) { throw 'Release publishing failed.' }

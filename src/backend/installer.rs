@@ -4,7 +4,7 @@ use anyhow::{ensure, Context, Result};
 use std::{
     ffi::OsString,
     fs::{self, File, OpenOptions},
-    io::Write,
+    io::{Read, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
@@ -19,6 +19,13 @@ const ICON: &[u8] = include_bytes!("../../steamvr-lighthouse-manager.png");
 pub struct InstallPlan {
     pub directory: PathBuf,
     pub executable: PathBuf,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct InstallProgress {
+    /// Progress fraction in `0.0..=1.0`.
+    pub fraction: f32,
+    pub stage: &'static str,
 }
 
 /// A fixed user-local destination; never requests administrator privileges.
@@ -47,11 +54,58 @@ pub fn plan() -> Result<InstallPlan> {
     }
 }
 
+pub fn is_update_only() -> bool {
+    update_only_for(
+        std::env::args_os().skip(1),
+        cfg!(feature = "update-only"),
+        running_from_legacy_go_updater_path,
+    )
+}
+
+fn legacy_go_updater_path() -> Option<PathBuf> {
+    Some(
+        dirs::config_dir()?
+            .join("Alumi")
+            .join("Base Station Manager")
+            .join("installer.exe"),
+    )
+}
+
+fn running_from_legacy_go_updater_path() -> bool {
+    let Some(expected) = legacy_go_updater_path() else {
+        return false;
+    };
+    let Ok(current) = std::env::current_exe() else {
+        return false;
+    };
+    same_file(&current, &expected).unwrap_or(false)
+}
+
+fn update_only_for(
+    arguments: impl Iterator<Item = OsString>,
+    feature: bool,
+    from_legacy_updater: impl FnOnce() -> bool,
+) -> bool {
+    let mut explicit = false;
+    for argument in arguments {
+        if argument == "--portable" {
+            return false;
+        }
+        explicit |= argument == "--update-only";
+    }
+    explicit || feature || from_legacy_updater()
+}
+
 pub fn should_offer() -> bool {
-    offer_for(std::env::args_os().skip(1), cfg!(feature = "installer"), || {
-        let plan = plan()?;
-        same_file(&std::env::current_exe()?, &plan.executable)
-    })
+    offer_for(
+        std::env::args_os().skip(1),
+        cfg!(any(feature = "installer", feature = "update-only"))
+            || running_from_legacy_go_updater_path(),
+        || {
+            let plan = plan()?;
+            same_file(&std::env::current_exe()?, &plan.executable)
+        },
+    )
 }
 
 fn offer_for(arguments: impl Iterator<Item = OsString>, feature: bool,
@@ -59,36 +113,351 @@ fn offer_for(arguments: impl Iterator<Item = OsString>, feature: bool,
     let mut explicit = false;
     for argument in arguments {
         if argument == "--portable" { return false; }
-        explicit |= argument == "--install";
+        explicit |= argument == "--install" || argument == "--update-only";
     }
     explicit || (feature && !installed().unwrap_or(false))
 }
 
-pub fn install(plan: &InstallPlan) -> Result<()> {
+pub fn install_with_progress(
+    plan: &InstallPlan,
+    mut on_progress: impl FnMut(InstallProgress),
+) -> Result<()> {
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     anyhow::bail!("User-local installation is not supported on this operating system");
+    on_progress(InstallProgress {
+        fraction: 0.05,
+        stage: "Preparing install folder…",
+    });
     // Resolve launcher destinations before touching the installation directory.
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let launcher = launcher_path()?;
     let source = std::env::current_exe().context("Locate the running executable")?;
-    install_files(&source, plan)?;
+    install_files_with_progress(&source, plan, &mut on_progress)?;
     #[cfg(target_os = "linux")]
-    install_desktop(plan, &launcher)?;
+    {
+        on_progress(InstallProgress {
+            fraction: 0.90,
+            stage: "Creating application launcher…",
+        });
+        install_desktop(plan, &launcher)?;
+    }
     #[cfg(target_os = "windows")]
-    install_shortcut(plan, &launcher)?;
+    {
+        on_progress(InstallProgress {
+            fraction: 0.90,
+            stage: "Creating Start Menu shortcut…",
+        });
+        install_shortcut(plan, &launcher)?;
+    }
     #[cfg(target_os = "macos")]
-    install_bundle(plan)?;
+    {
+        on_progress(InstallProgress {
+            fraction: 0.90,
+            stage: "Creating application bundle…",
+        });
+        install_bundle(plan)?;
+    }
+    on_progress(InstallProgress {
+        fraction: 0.95,
+        stage: "Finalizing installation…",
+    });
     Ok(())
 }
 
 /// Installed starts (including updater restarts) must never re-enter the chooser.
 pub fn launch(plan: &InstallPlan) -> Result<()> {
-    let arguments = std::env::args_os().skip(1)
-        .filter(|argument| argument != "--install" && argument != "--portable");
+    let arguments = std::env::args_os().skip(1).filter(|argument| {
+        argument != "--install" && argument != "--portable" && argument != "--update-only"
+    });
     Command::new(&plan.executable).args(arguments).arg("--portable")
         .current_dir(&plan.directory)
         .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())
         .spawn().with_context(|| format!("Start {}", plan.executable.display()))?;
+    Ok(())
+}
+
+/// Replace an existing Go installation (if present) and install the native Rust build.
+pub fn migrate_go_and_install(
+    plan: &InstallPlan,
+    remove_legacy: bool,
+    mut on_progress: impl FnMut(InstallProgress),
+) -> Result<()> {
+    #[cfg(target_os = "windows")]
+    if remove_legacy {
+        on_progress(InstallProgress {
+            fraction: 0.06,
+            stage: "Waiting for old version to close…",
+        });
+        wait_for_legacy_go_exit(std::time::Duration::from_secs(5));
+
+        if let Some(uninstaller) = find_legacy_go_uninstaller() {
+            on_progress(InstallProgress {
+                fraction: 0.16,
+                stage: "Removing previous Go version…",
+            });
+            run_legacy_go_uninstaller(&uninstaller)?;
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    let _ = remove_legacy;
+
+    install_with_progress(plan, |progress| {
+        // Map 0.0..=1.0 into 0.28..=0.88 so legacy removal and manifest update have room.
+        on_progress(InstallProgress {
+            fraction: 0.28 + progress.fraction.clamp(0.0, 1.0) * 0.60,
+            stage: progress.stage,
+        });
+    })?;
+
+    on_progress(InstallProgress {
+        fraction: 0.91,
+        stage: "Updating SteamVR manifest…",
+    });
+    if let Some(config_dir) = dirs::config_dir() {
+        let app_config_dir = config_dir.join("Alumi").join("Base Station Manager");
+        let manifest = app_config_dir.join("manifest.vrmanifest");
+        let _ = update_steamvr_manifest(&manifest, &plan.executable);
+
+        // Clean up the temporary installer.exe downloaded by the Go updater if it isn't us.
+        let legacy_installer = app_config_dir.join("installer.exe");
+        if let Ok(current) = std::env::current_exe() {
+            if !same_file(&current, &legacy_installer).unwrap_or(true) {
+                let _ = fs::remove_file(&legacy_installer);
+            }
+        }
+    }
+
+    on_progress(InstallProgress {
+        fraction: 0.94,
+        stage: "Finalizing update…",
+    });
+    Ok(())
+}
+
+fn update_steamvr_manifest(manifest_path: &Path, executable: &Path) -> Result<()> {
+    if !regular_if_present(manifest_path)? {
+        return Ok(());
+    }
+    let raw = fs::read_to_string(manifest_path).context("Read SteamVR manifest")?;
+    let mut doc: serde_json::Value = serde_json::from_str(&raw).context("Parse SteamVR manifest")?;
+    let mut changed = false;
+    if let Some(apps) = doc.get_mut("applications").and_then(|v| v.as_array_mut()) {
+        for app in apps {
+            let is_ours = app
+                .get("app_key")
+                .and_then(|v| v.as_str())
+                .is_some_and(|key| key == "com.github.dhcpcd9.base-station-manager");
+            if is_ours {
+                if let Some(obj) = app.as_object_mut() {
+                    obj.insert(
+                        "binary_path_windows".into(),
+                        serde_json::Value::String(executable.to_string_lossy().into_owned()),
+                    );
+                    changed = true;
+                }
+            }
+        }
+    }
+    if changed {
+        let updated = serde_json::to_string_pretty(&doc).context("Serialize SteamVR manifest")?;
+        replace_bytes(manifest_path, updated.as_bytes()).context("Write SteamVR manifest")?;
+    }
+    Ok(())
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn parse_uninstall_executable(raw: &str) -> Option<PathBuf> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let path = if let Some(rest) = trimmed.strip_prefix('"') {
+        rest.split('"').next()?
+    } else {
+        trimmed.split_whitespace().next()?
+    };
+    if path.is_empty() {
+        None
+    } else {
+        Some(PathBuf::from(path))
+    }
+}
+
+#[cfg(target_os = "windows")]
+const LEGACY_GO_UNINSTALL_KEY: &str =
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Alumi Inc.Base Station Manager";
+
+#[cfg(target_os = "windows")]
+fn find_legacy_go_uninstaller() -> Option<PathBuf> {
+    use std::os::windows::ffi::OsStringExt;
+    use windows::{
+        core::PCWSTR,
+        Win32::System::Registry::{
+            RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, HKEY_LOCAL_MACHINE, KEY_READ,
+            KEY_WOW64_64KEY, REG_SZ, REG_VALUE_TYPE,
+        },
+    };
+    let subkey = wide(std::ffi::OsStr::new(LEGACY_GO_UNINSTALL_KEY)).ok()?;
+    let mut key = HKEY::default();
+    if unsafe {
+        RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR(subkey.as_ptr()),
+            Some(0),
+            KEY_READ | KEY_WOW64_64KEY,
+            &mut key,
+        )
+    }
+    .is_err()
+    {
+        return None;
+    }
+    struct KeyGuard(HKEY);
+    impl Drop for KeyGuard {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = RegCloseKey(self.0);
+            }
+        }
+    }
+    let _guard = KeyGuard(key);
+
+    let value_name = wide(std::ffi::OsStr::new("UninstallString")).ok()?;
+    let mut value_type = REG_VALUE_TYPE::default();
+    let mut size: u32 = 0;
+    if unsafe {
+        RegQueryValueExW(
+            key,
+            PCWSTR(value_name.as_ptr()),
+            None,
+            Some(&mut value_type),
+            None,
+            Some(&mut size),
+        )
+    }
+    .is_err()
+        || value_type != REG_SZ
+        || size < 2
+    {
+        return None;
+    }
+    let mut buffer = vec![0u16; (size as usize + 1) / 2];
+    if unsafe {
+        RegQueryValueExW(
+            key,
+            PCWSTR(value_name.as_ptr()),
+            None,
+            Some(&mut value_type),
+            Some(buffer.as_mut_ptr() as *mut u8),
+            Some(&mut size),
+        )
+    }
+    .is_err()
+    {
+        return None;
+    }
+    let end = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
+    let raw = OsString::from_wide(&buffer[..end]).to_string_lossy().into_owned();
+    let path = parse_uninstall_executable(&raw)?;
+    path.is_file().then_some(path)
+}
+
+#[cfg(target_os = "windows")]
+fn wait_for_legacy_go_exit(timeout: std::time::Duration) {
+    let deadline = std::time::Instant::now() + timeout;
+    while legacy_go_process_running() && std::time::Instant::now() < deadline {
+        std::thread::sleep(std::time::Duration::from_millis(150));
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn legacy_go_process_running() -> bool {
+    use windows::Win32::{
+        Foundation::CloseHandle,
+        System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+            TH32CS_SNAPPROCESS,
+        },
+    };
+    let Ok(snapshot) = (unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) }) else {
+        return false;
+    };
+    let mut entry = PROCESSENTRY32W {
+        dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+        ..Default::default()
+    };
+    let mut found = false;
+    if unsafe { Process32FirstW(snapshot, &mut entry) }.is_ok() {
+        loop {
+            let end = entry
+                .szExeFile
+                .iter()
+                .position(|&c| c == 0)
+                .unwrap_or(entry.szExeFile.len());
+            let name = String::from_utf16_lossy(&entry.szExeFile[..end]);
+            if name.eq_ignore_ascii_case("base-station-manager.exe") {
+                found = true;
+                break;
+            }
+            if unsafe { Process32NextW(snapshot, &mut entry) }.is_err() {
+                break;
+            }
+        }
+    }
+    unsafe {
+        let _ = CloseHandle(snapshot);
+    }
+    found
+}
+
+#[cfg(target_os = "windows")]
+fn run_legacy_go_uninstaller(uninstaller: &Path) -> Result<()> {
+    use windows::{
+        core::{w, PCWSTR},
+        Win32::{
+            Foundation::{CloseHandle, GetLastError, ERROR_CANCELLED},
+            System::Threading::WaitForSingleObject,
+            UI::{
+                Shell::{ShellExecuteExW, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW},
+                WindowsAndMessaging::SW_HIDE,
+            },
+        },
+    };
+    let file = wide(uninstaller.as_os_str())?;
+    let mut info = SHELLEXECUTEINFOW {
+        cbSize: std::mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+        fMask: SEE_MASK_NOCLOSEPROCESS,
+        lpVerb: w!("runas"),
+        lpFile: PCWSTR(file.as_ptr()),
+        lpParameters: w!("/S"),
+        nShow: SW_HIDE.0,
+        ..Default::default()
+    };
+    if unsafe { ShellExecuteExW(&mut info) }.is_err() {
+        let code = unsafe { GetLastError() };
+        if code == ERROR_CANCELLED {
+            anyhow::bail!(
+                "Administrator permission was declined while removing the previous Go version"
+            );
+        }
+        anyhow::bail!(
+            "Could not start the previous Go uninstaller at {}",
+            uninstaller.display()
+        );
+    }
+    if !info.hProcess.is_invalid() {
+        unsafe {
+            let _ = WaitForSingleObject(info.hProcess, 30_000);
+            let _ = CloseHandle(info.hProcess);
+        }
+    }
+    // NSIS /S spawns a detached copy of itself to delete the install folder; wait briefly for it.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(8);
+    while (uninstaller.exists() || find_legacy_go_uninstaller().is_some())
+        && std::time::Instant::now() < deadline
+    {
+        std::thread::sleep(std::time::Duration::from_millis(200));
+    }
     Ok(())
 }
 
@@ -135,8 +504,18 @@ fn owned_directory(directory: &Path) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 fn install_files(source: &Path, plan: &InstallPlan) -> Result<()> {
-    ensure!(fs::metadata(source)?.is_file(), "Installation source is not a regular executable");
+    install_files_with_progress(source, plan, &mut |_| {})
+}
+
+fn install_files_with_progress(
+    source: &Path,
+    plan: &InstallPlan,
+    on_progress: &mut impl FnMut(InstallProgress),
+) -> Result<()> {
+    let source_meta = fs::metadata(source)?;
+    ensure!(source_meta.is_file(), "Installation source is not a regular executable");
     owned_directory(&plan.directory)?;
     #[cfg(target_os = "macos")]
     {
@@ -152,18 +531,55 @@ fn install_files(source: &Path, plan: &InstallPlan) -> Result<()> {
     }
     regular_if_present(&plan.executable)?;
     if !same_file(source, &plan.executable)? {
+        on_progress(InstallProgress {
+            fraction: 0.10,
+            stage: "Copying application…",
+        });
         let mut staged = StagedFile::new(&plan.executable)?;
         let mut input = File::open(source).context("Open the running executable for installation")?;
-        std::io::copy(&mut input, staged.writer()).context("Copy executable into installation staging")?;
+        let total_bytes = source_meta.len().max(1);
+        let mut copied: u64 = 0;
+        let mut buffer = [0u8; 64 * 1024];
+        loop {
+            let read = input
+                .read(&mut buffer)
+                .context("Copy executable into installation staging")?;
+            if read == 0 {
+                break;
+            }
+            staged
+                .writer()
+                .write_all(&buffer[..read])
+                .context("Copy executable into installation staging")?;
+            copied = copied.saturating_add(read as u64);
+            let ratio = (copied as f32 / total_bytes as f32).clamp(0.0, 1.0);
+            on_progress(InstallProgress {
+                fraction: 0.10 + ratio * 0.68,
+                stage: "Copying application…",
+            });
+        }
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             // No copied setuid/setgid bits; the installed app runs as this user.
             staged.writer().set_permissions(fs::Permissions::from_mode(0o755))?;
         }
+        on_progress(InstallProgress {
+            fraction: 0.80,
+            stage: "Finalizing executable…",
+        });
         staged.commit(&plan.executable).context(
             "Replace the installed executable. Close any running installed copy and retry; the previous executable has not been deleted")?;
+    } else {
+        on_progress(InstallProgress {
+            fraction: 0.80,
+            stage: "Executable already up to date…",
+        });
     }
+    on_progress(InstallProgress {
+        fraction: 0.84,
+        stage: "Installing application icon…",
+    });
     replace_bytes(&plan.directory.join("icon.png"), ICON)?;
     Ok(())
 }
@@ -480,5 +896,73 @@ mod tests {
         assert!(!offer_for(std::iter::empty(), false, || panic!("regular build must short circuit")));
         assert!(!offer_for(std::iter::empty(), true, || Ok(true)));
         assert!(offer_for([OsString::from("--install")].into_iter(), false, || Ok(true)));
+    }
+
+    #[test]
+    fn install_files_reports_monotonic_progress() {
+        let sandbox = Sandbox::new();
+        let plan = sandbox.plan();
+        let source = sandbox.0.join("large-portable");
+        fs::write(&source, vec![0xAB; 200 * 1024]).unwrap();
+        let mut updates = Vec::new();
+        install_files_with_progress(&source, &plan, &mut |progress| updates.push(progress)).unwrap();
+        assert!(updates.len() >= 5);
+        for window in updates.windows(2) {
+            assert!(window[0].fraction <= window[1].fraction);
+        }
+        assert!(updates.first().unwrap().fraction >= 0.0);
+        assert!(updates.last().unwrap().fraction <= 1.0);
+    }
+
+    #[test]
+    fn parses_legacy_go_uninstall_string() {
+        assert_eq!(
+            parse_uninstall_executable(r#""C:\Program Files\Alumi Inc.\Base Station Manager\uninstall.exe""#),
+            Some(PathBuf::from(r#"C:\Program Files\Alumi Inc.\Base Station Manager\uninstall.exe"#))
+        );
+        assert_eq!(
+            parse_uninstall_executable(r#""C:\Program Files\Alumi Inc.\Base Station Manager\uninstall.exe" /S"#),
+            Some(PathBuf::from(r#"C:\Program Files\Alumi Inc.\Base Station Manager\uninstall.exe"#))
+        );
+        assert_eq!(
+            parse_uninstall_executable(r#"C:\App\uninstall.exe /S"#),
+            Some(PathBuf::from(r#"C:\App\uninstall.exe"#))
+        );
+        assert_eq!(parse_uninstall_executable("   "), None);
+    }
+
+    #[test]
+    fn updates_legacy_steamvr_manifest_binary_path() {
+        let sandbox = Sandbox::new();
+        let manifest = sandbox.0.join("manifest.vrmanifest");
+        fs::write(
+            &manifest,
+            r#"{
+  "source": "builtin",
+  "applications": [{
+    "app_key": "com.github.dhcpcd9.base-station-manager",
+    "launch_type": "binary",
+    "binary_path_windows": "C:\\Program Files\\Alumi Inc.\\Base Station Manager\\base-station-manager.exe"
+  }]
+}"#,
+        )
+        .unwrap();
+        let new_exe = PathBuf::from(r"C:\Users\me\AppData\Local\Programs\SteamVR Lighthouse Manager\steamvr-lighthouse-manager.exe");
+        update_steamvr_manifest(&manifest, &new_exe).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&fs::read_to_string(&manifest).unwrap()).unwrap();
+        assert_eq!(
+            parsed["applications"][0]["binary_path_windows"].as_str(),
+            Some(new_exe.to_str().unwrap())
+        );
+    }
+
+    #[test]
+    fn update_only_respects_portable_and_explicit_flag() {
+        assert!(update_only_for(std::iter::empty(), true, || false));
+        assert!(!update_only_for([OsString::from("--portable")].into_iter(), true, || panic!("portable must short circuit")));
+        assert!(update_only_for([OsString::from("--update-only")].into_iter(), false, || false));
+        assert!(!update_only_for(["--update-only", "--portable"].map(OsString::from).into_iter(), false, || true));
+        assert!(update_only_for(std::iter::empty(), false, || true));
+        assert!(!update_only_for(std::iter::empty(), false, || false));
     }
 }

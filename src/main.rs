@@ -1,3 +1,5 @@
+#![cfg_attr(all(target_os = "windows", not(test)), windows_subsystem = "windows")]
+
 //! Application entry point: registers embedded assets and opens the GPUI window.
 
 use gpui::{prelude::*, 
@@ -71,17 +73,32 @@ fn main() {
             ]);
 
             if backend::installer::should_offer() {
+                let window_size = if backend::installer::is_update_only() {
+                    size(px(460.), px(216.))
+                } else {
+                    size(px(480.), px(336.))
+                };
                 cx.open_window(
                     WindowOptions {
                         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                            None, size(px(700.), px(520.)), cx,
+                            None, window_size, cx,
                         ))),
                         titlebar: None,
                         window_decorations: Some(gpui::WindowDecorations::Client),
+                        #[cfg(not(target_os = "windows"))]
+                        window_background: gpui::WindowBackgroundAppearance::Transparent,
                         is_resizable: false,
                         ..Default::default()
                     },
-                    |_, cx| cx.new(installer::Installer::new),
+                    |window, cx| {
+                        #[cfg(target_os = "windows")]
+                        {
+                            apply_window_icon(window);
+                            round_window_corners(window);
+                        }
+                        let _ = window;
+                        cx.new(installer::Installer::new)
+                    },
                 )
                 .expect("open installer window");
                 cx.activate(true);
@@ -104,7 +121,10 @@ fn open_manager(cx: &mut GpuiApp) {
         |window, cx| cx.new(|cx| {
             let mut app = App::new(cx);
             #[cfg(target_os = "windows")]
-            app.initialize_tray(window, cx);
+            {
+                apply_window_icon(window);
+                app.initialize_tray(window, cx);
+            }
             let entity = cx.weak_entity();
             window.on_window_should_close(cx, move |_, cx| {
                 entity.update(cx, |app: &mut App, cx| app.quit(cx)).is_err()
@@ -114,4 +134,65 @@ fn open_manager(cx: &mut GpuiApp) {
     )
     .expect("open manager window");
     cx.activate(true);
+}
+
+#[cfg(target_os = "windows")]
+fn apply_window_icon(window: &gpui::Window) {
+    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+    use windows::{
+        core::PCWSTR,
+        Win32::{
+            Foundation::{HWND, LPARAM, WPARAM},
+            System::LibraryLoader::GetModuleHandleW,
+            UI::WindowsAndMessaging::{
+                LoadImageW, SendMessageW, ICON_BIG, ICON_SMALL, IMAGE_ICON, LR_DEFAULTSIZE,
+                LR_SHARED, WM_SETICON,
+            },
+        },
+    };
+    let Ok(handle) = HasWindowHandle::window_handle(window) else {
+        return;
+    };
+    let RawWindowHandle::Win32(win32) = handle.as_raw() else {
+        return;
+    };
+    let hwnd = HWND(win32.hwnd.get() as *mut _);
+    let Ok(module) = (unsafe { GetModuleHandleW(None) }) else {
+        return;
+    };
+    // winresource embeds the main icon at resource ID 1.
+    let icon_id = PCWSTR(1 as *const u16);
+    if let Ok(icon) =
+        unsafe { LoadImageW(Some(module.into()), icon_id, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED) }
+    {
+        unsafe {
+            let _ = SendMessageW(hwnd, WM_SETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(icon.0 as isize)));
+            let _ = SendMessageW(hwnd, WM_SETICON, Some(WPARAM(ICON_SMALL as usize)), Some(LPARAM(icon.0 as isize)));
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn round_window_corners(window: &gpui::Window) {
+    use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+    use windows::Win32::{
+        Foundation::HWND,
+        Graphics::Dwm::{
+            DwmSetWindowAttribute, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND,
+        },
+    };
+    if let Ok(handle) = HasWindowHandle::window_handle(window) {
+        if let RawWindowHandle::Win32(win32) = handle.as_raw() {
+            let hwnd = HWND(win32.hwnd.get() as *mut _);
+            let preference = DWMWCP_ROUND;
+            let _ = unsafe {
+                DwmSetWindowAttribute(
+                    hwnd,
+                    DWMWA_WINDOW_CORNER_PREFERENCE,
+                    &preference as *const _ as *const _,
+                    std::mem::size_of_val(&preference) as u32,
+                )
+            };
+        }
+    }
 }
